@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import './App.css';
 import ScrollyContainer from './components/ScrollyContainer';
 import StickyFingerprint from './components/StickyFingerprint';
@@ -21,10 +21,41 @@ export default function App() {
   const [activeStep, setActiveStep] = useState(0);
   const [subStep, setSubStep] = useState(null);
   const isMobile = useIsMobile();
+  const stickyRef = useRef(null);
+  const narrativeRef = useRef(null);
 
   const handleStepChange = useCallback((step, sub) => {
     setActiveStep(step);
     setSubStep(sub ?? null);
+  }, []);
+
+  useEffect(() => {
+    const panel = stickyRef.current;
+    const narrative = narrativeRef.current;
+    if (!panel || !narrative) return;
+
+    let released = false;
+
+    const onScroll = () => {
+      const narrativeBottom = narrative.getBoundingClientRect().bottom;
+      const shouldRelease = narrativeBottom <= window.innerHeight;
+
+      if (shouldRelease && !released) {
+        const layoutRect = panel.parentElement.getBoundingClientRect();
+        panel.style.position = 'relative';
+        panel.style.top = 'auto';
+        panel.style.marginTop = `${-layoutRect.top}px`;
+        released = true;
+      } else if (!shouldRelease && released) {
+        panel.style.position = '';
+        panel.style.top = '';
+        panel.style.marginTop = '';
+        released = false;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
   if (isMobile) {
@@ -49,11 +80,11 @@ Understanding what actually happens, step by step, is the only way to make the d
       </header>
 
       <main className="scrolly-layout">
-        <aside className="sticky-panel">
+        <aside ref={stickyRef} className="sticky-panel">
           <StickyFingerprint step={activeStep} subStep={subStep} />
         </aside>
 
-        <section className="narrative-panel">
+        <section ref={narrativeRef} className="narrative-panel">
           <ScrollyContainer onStepChange={handleStepChange} subStep={subStep} />
         </section>
       </main>

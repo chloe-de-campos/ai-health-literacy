@@ -1,7 +1,7 @@
 export const BASE_BARS = [
   {
     id: 'name', label: 'Full Name', section: 'demographic', baseWidth: 85,
-    color: '#D4602A',
+    color: '#D4572A',
     description: 'Your legal name as recorded across hospital and clinic systems.',
     why: 'Used to match your record to trial consent forms and link visits over time. Almost always removed before data is shared for research.',
     stepNotes: {
@@ -10,13 +10,13 @@ export const BASE_BARS = [
   },
   {
     id: 'dob', label: 'Date of Birth', section: 'demographic', baseWidth: 85,
-    color: '#E09818',
+    color: '#B34030',
     description: 'Your exact date of birth as recorded in your medical record.',
     why: 'Used to confirm patient identity and calculate age-based eligibility criteria for the trial.',
   },
   {
     id: 'ssn', label: 'Social Security #', section: 'demographic', baseWidth: 85,
-    color: '#B02830',
+    color: '#C45E38',
     description: 'Your government-issued national identifier.',
     why: 'Used for identity verification and insurance billing during enrollment. Removed before any research dataset is shared.',
     stepNotes: {
@@ -25,7 +25,7 @@ export const BASE_BARS = [
   },
   {
     id: 'zip', label: 'ZIP Code', section: 'demographic', baseWidth: 85,
-    color: '#CC4830',
+    color: '#7A9E6E',
     description: 'Your 5-digit postal code, retained as a geographic marker.',
     why: 'Retained as a quasi-identifier to study geographic health patterns and socioeconomic disparities — but it\'s also one of the fields most useful to an attacker.',
     stepNotes: {
@@ -35,7 +35,7 @@ export const BASE_BARS = [
   },
   {
     id: 'diagnosis', label: 'Diagnosis Codes', section: 'clinical', baseWidth: 85,
-    color: '#5A9E52',
+    color: '#E09B2F',
     description: 'ICD-10 codes describing your documented medical conditions.',
     why: 'Defines trial eligibility and helps researchers study how the intervention performs across different disease subgroups.',
     stepNotes: {
@@ -46,7 +46,7 @@ export const BASE_BARS = [
   },
   {
     id: 'notes', label: 'Clinical Notes', section: 'clinical', baseWidth: 85,
-    color: '#16B8A8',
+    color: '#9A5A8A',
     description: 'Free-text observations written by your care team.',
     why: 'Contain nuanced clinical context that structured codes miss. AI uses natural language processing to screen these notes for eligibility.',
     stepNotes: {
@@ -56,13 +56,13 @@ export const BASE_BARS = [
   },
   {
     id: 'meds', label: 'Medications', section: 'clinical', baseWidth: 85,
-    color: '#3C60A8',
+    color: '#C98B2E',
     description: 'The full list of prescription and over-the-counter drugs in your record.',
     why: 'Screens for drug interactions with the trial intervention and helps characterize the patient population being studied.',
   },
   {
     id: 'labs', label: 'Lab Results', section: 'measurement', baseWidth: 85,
-    color: '#18AABC',
+    color: '#3A9A8F',
     description: 'Blood panels, urine tests, and other clinical measurements.',
     why: 'Establishes your baseline health status and tracks how your body responds to the trial intervention over time.',
     stepNotes: {
@@ -71,7 +71,7 @@ export const BASE_BARS = [
   },
   {
     id: 'wearable', label: 'Wearable Data', section: 'measurement', baseWidth: 85,
-    color: '#9852A2',
+    color: '#8B3A2A',
     description: 'Continuous sensor data from fitness trackers or medical-grade wearables.',
     why: 'Captures real-world activity, sleep, and physiological patterns outside of scheduled clinical visits — data that didn\'t exist in your record before you enrolled.',
     stepNotes: {

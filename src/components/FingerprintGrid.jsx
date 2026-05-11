@@ -21,7 +21,7 @@ const STEP8_IDS = ['zip', 'wearable'];
 const GENERALIZED_SHADES = { dob: '#c2cdd6', zip: '#8a9aa4', diagnosis: '#5c6e78' };
 
 // Muted palette for crowd bars — grey, green, red, blue, purple
-const CROWD_PALETTE = ['#9EAAB5', '#6a9068', '#a06868', '#5a6e98', '#7a5a90'];
+const CROWD_PALETTE = ['#9EAAB5', '#6a9068', '#C45E38', '#5a6e98', '#7a5a90', '#3A9A8F','#8B3A2A'];
 
 function crowdBarColor(cellIdx, barIdx) {
   const h = (((cellIdx * 2654435761) ^ (barIdx * 2246822519)) >>> 0);
@@ -64,11 +64,11 @@ function MiniFingerprint({ bars, cellIdx, step, entryDelay, isExiting, isPreExit
     animation = 'none';
   } else if (isExiting && !isUser) {
     const exitAnim = col < COLS / 2 ? 'cell-fly-out-left' : 'cell-fly-out-right';
-    animation = `${exitAnim} 320ms cubic-bezier(0.4,0,1,1) ${dist * 18}ms both`;
+    animation = `${exitAnim} 380ms cubic-bezier(0.4,0,0.6,1) ${dist * 20}ms both`;
   } else {
     const flyAnim = col < COLS / 2 ? 'cell-fly-left' : 'cell-fly-right';
-    const staggerDelay = (entryDelay ?? 0) + dist * 22;
-    animation = `${flyAnim} 350ms cubic-bezier(0.2,0,0.4,1) ${staggerDelay}ms both`;
+    const staggerDelay = (entryDelay ?? 0) + dist * 28;
+    animation = `${flyAnim} 420ms cubic-bezier(0.22,1,0.36,1) ${staggerDelay}ms both`;
   }
 
   return (
