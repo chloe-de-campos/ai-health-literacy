@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import CitationPopover from './CitationPopover';
 
 function QuestionHint({ hint }) {
@@ -21,8 +21,47 @@ function QuestionHint({ hint }) {
 }
 
 function GlossaryTerm({ term, definition }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleOutside(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    function handleEscape(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('keydown', handleEscape);
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [open]);
+
   return (
-    <abbr className="glossary-term" title={definition}>{term}</abbr>
+    <span ref={ref} style={{ position: 'relative', display: 'inline' }}>
+      <span
+        className="glossary-term"
+        role="button"
+        tabIndex={0}
+        onClick={() => setOpen(o => !o)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(o => !o); }
+          if (e.key === 'Escape') setOpen(false);
+        }}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+      >
+        {term}
+      </span>
+      {open && (
+        <span className="citation-popover" role="dialog" aria-label={`Definition of ${term}`}>
+          {definition}
+        </span>
+      )}
+    </span>
   );
 }
 

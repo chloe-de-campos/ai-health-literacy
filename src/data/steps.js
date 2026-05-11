@@ -134,7 +134,7 @@ Synthetic data replaces real records with statistically generated ones: artifici
 
 But it's worth keeping the inference risk in perspective. In 2023, Duke University researchers found data brokers openly selling lists of people flagged for depression, anxiety, and bipolar disorder — bundled with ethnicity, net worth, and zip code — for as little as $275 per 5,000 aggregated records.[16] The sensitive categories that represent inference risks in a clinical trial, like your mental health, your pregnancy status, your identity, are likely already for sale somewhere, derived from your browsing history and purchase patterns.
 
-It's good to remember what participation makes possible. Across oncology drugs approved by the FDA, an estimated 12,000 trial participants on average contributed to each drug's pre-license studies.[19] Participants themselves often gain something concrete too: closer monitoring, more frequent contact with specialists, and sometimes access to treatments not yet available anywhere else.
+It's good to remember what participation makes possible. Across oncology drugs approved by the FDA, over 12,000 trial participants contributed to each drug's pre-license studies.[19] Participants themselves often gain something concrete too: closer monitoring, more frequent contact with specialists, and sometimes access to treatments not yet available anywhere else.
 
 What's right for someone else may not be right for you. These questions are how you figure out which is which.`,
     citationIds: [16, 19],

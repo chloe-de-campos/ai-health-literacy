@@ -16,8 +16,8 @@ import {
 // ─── Bar state derivation ─────────────────────────────────────────────────────
 
 const DEID_GRAY = '#9EAAB5';
-const BAR_HEIGHT = 16;
-const BAR_SCALE = 0.82; // shrink rendered width so labels fit beside bars
+const BAR_HEIGHT = 28;
+const BAR_SCALE = 1.0;
 
 const GENERALIZED_SHADES = { dob: '#c2cdd6', zip: '#8a9aa4', diagnosis: '#5c6e78' };
 
@@ -270,10 +270,11 @@ function FingerprintBar({ bar, stepIndex, vertical = false, onBarSelect }) {
           backgroundColor: 'transparent',
           transition: 'height 500ms ease, opacity 500ms ease',
         } : {
+          position: 'relative',
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
-          marginBottom: '0',
+          marginLeft: '7.5rem',
+          marginBottom: '5px',
         }}
         role="img"
         aria-label={`${bar.label} (removed)`}
@@ -370,11 +371,11 @@ function FingerprintBar({ bar, stepIndex, vertical = false, onBarSelect }) {
           transition: 'height 500ms ease',
         } : {
           position: 'relative',
-          marginBottom: '1px',
+          marginBottom: '5px',
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
-          gap: '8px',
+          marginLeft: '7.5rem',
         }}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -538,17 +539,6 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
 
   return (
     <div ref={wrapperRef} className="fingerprint-wrapper">
-      <h3 className="fingerprint-title">Health Data Fingerprint</h3>
-
-      {step === 0 && (
-        <div className="fp-onboard">
-          <p className="fp-onboard__intro">
-            Like a fingerprint, the combination of fields in your health record is uniquely yours.
-            Each bar below is one data field — hover or tap to see what it contains and why it's collected.
-          </p>
-        </div>
-      )}
-
       <div className="fp-stage">
         {showSingle && (
           <div
@@ -579,7 +569,7 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
       <p className="fingerprint-hint" />
 
 
-      <p className="fp-lock-label" style={{ opacity: isLocked ? 1 : 0 }}>Your record is unchanged</p>
+     
     </div>
   );
 }
