@@ -1,0 +1,135 @@
+import React, { useState } from 'react';
+import CitationPopover from './CitationPopover';
+
+function QuestionHint({ hint }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="step-question__hint-wrapper">
+      <button
+        className="step-question__hint-toggle"
+        onClick={() => setOpen(o => !o)}
+        aria-expanded={open}
+      >
+        How to evaluate this answer
+        <svg viewBox="0 0 10 6" width="8" height="8" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ transition: 'transform 200ms ease', transform: open ? 'rotate(180deg)' : 'none' }}>
+          <polyline points="1 1 5 5 9 1" />
+        </svg>
+      </button>
+      {open && <p className="step-question__hint">{hint}</p>}
+    </div>
+  );
+}
+
+function GlossaryTerm({ term, definition }) {
+  return (
+    <abbr className="glossary-term" title={definition}>{term}</abbr>
+  );
+}
+
+function parseBody(text) {
+  const parts = [];
+  const regex = /\[(\d+)\]|\[\[([^\]|]+)\|([^\]]+)\]\]/g;
+  let last = 0, match, key = 0;
+  while ((match = regex.exec(text)) !== null) {
+    if (match.index > last) parts.push(text.slice(last, match.index));
+    if (match[1]) {
+      parts.push(<CitationPopover key={key++} id={Number(match[1])} />);
+    } else {
+      parts.push(<GlossaryTerm key={key++} term={match[2]} definition={match[3]} />);
+    }
+    last = match.index + match[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
+function renderParagraphs(text, className, trailing = null) {
+  const paragraphs = text.split(/\n\n|<br\s*\/?>/).map(p => p.trim()).filter(Boolean);
+  return paragraphs.map((para, i) => (
+    <p key={i} className={className}>
+      {parseBody(para)}
+      {i === paragraphs.length - 1 && trailing}
+    </p>
+  ));
+}
+
+export default function StepContent({ step, subStep, techniqueOnly = false, introOnly = false, hideQuestion = false }) {
+  // Step 4 has sub-steps: sticky header stays fixed, only technique block scrolls
+  if (step.subSteps) {
+    // Mobile: just the heading + intro paragraph, no technique yet
+    if (introOnly) {
+      return (
+        <div className="step-content">
+          <div className="step-number">{String(step.step + 1).padStart(2, '0')}</div>
+          <h2 className="step-heading">{step.heading}</h2>
+          <p className="step-body step-body--intro">{step.intro}</p>
+          {step.question && (
+            <div className="step-question">
+              <div className="step-question__label">Ask your coordinator</div>
+              <p className="step-question__text">{parseBody(step.question)}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const sub = step.subSteps[subStep ?? 0];
+    const techniqueCount = step.subSteps.filter(s => !s.isOutro).length;
+
+    if (techniqueOnly) {
+      return (
+        <div className="step-technique step-technique--scroll" key={subStep}>
+          <div className="step-technique__label">
+            {sub.technique}
+            {!sub.isOutro && (
+              <span className="step-technique__counter"> · {(subStep ?? 0) + 1} of {techniqueCount}</span>
+            )}
+          </div>
+          <p className="step-body">{parseBody(sub.body)}
+            {sub.citationIds?.map(id => <CitationPopover key={id} id={id} />)}
+          </p>
+        </div>
+      );
+    }
+    return (
+      <div className="step-content">
+        <div className="step-number">{String(step.step + 1).padStart(2, '0')}</div>
+        <h2 className="step-heading">{step.heading}</h2>
+        <p className="step-body step-body--intro">{step.intro}</p>
+        <div className="step-technique" key={subStep}>
+          <div className="step-technique__label">
+            {sub.technique}
+            {!sub.isOutro && (
+              <span className="step-technique__counter"> · {(subStep ?? 0) + 1} of {techniqueCount}</span>
+            )}
+          </div>
+          <p className="step-body">{parseBody(sub.body)}
+            {sub.citationIds?.map(id => <CitationPopover key={id} id={id} />)}
+          </p>
+        </div>
+        {step.question && (
+          <div className="step-question">
+            <div className="step-question__label">Ask your coordinator</div>
+            <p className="step-question__text">{parseBody(step.question)}</p>
+            {step.questionHint && <QuestionHint hint={step.questionHint} />}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="step-content">
+      <div className="step-number">{String(step.step + 1).padStart(2, '0')}</div>
+      <h2 className="step-heading">{step.heading}</h2>
+      {renderParagraphs(step.body, 'step-body')}
+      {!hideQuestion && step.question && (
+        <div className="step-question">
+          <div className="step-question__label">Ask your coordinator</div>
+          <p className="step-question__text">{parseBody(step.question)}</p>
+          {step.questionHint && <QuestionHint hint={step.questionHint} />}
+        </div>
+      )}
+    </div>
+  );
+}
