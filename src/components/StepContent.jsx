@@ -65,7 +65,20 @@ function GlossaryTerm({ term, definition }) {
   );
 }
 
-function parseBody(text) {
+// Emphasize the last word of a step headline in the red accent — "one
+// emphasized word per headline," per the design direction.
+export function renderHeading(text) {
+  const words = text.split(' ');
+  const last = words.pop();
+  return (
+    <>
+      {words.length > 0 ? words.join(' ') + ' ' : ''}
+      <em>{last}</em>
+    </>
+  );
+}
+
+export function parseBody(text) {
   const parts = [];
   const regex = /\[(\d+)\]|\[\[([^\]|]+)\|([^\]]+)\]\]/g;
   let last = 0, match, key = 0;
@@ -84,12 +97,16 @@ function parseBody(text) {
 
 function renderParagraphs(text, className, trailing = null) {
   const paragraphs = text.split(/\n\n|<br\s*\/?>/).map(p => p.trim()).filter(Boolean);
-  return paragraphs.map((para, i) => (
-    <p key={i} className={className}>
-      {parseBody(para)}
-      {i === paragraphs.length - 1 && trailing}
-    </p>
-  ));
+  return paragraphs.map((para, i) => {
+    const isBullet = para.startsWith('•');
+    const cls = isBullet ? `${className} step-body--bullet` : className;
+    return (
+      <p key={i} className={cls}>
+        {parseBody(isBullet ? para.slice(1).trim() : para)}
+        {i === paragraphs.length - 1 && trailing}
+      </p>
+    );
+  });
 }
 
 export default function StepContent({ step, subStep, techniqueOnly = false, introOnly = false, hideQuestion = false }) {
@@ -100,8 +117,8 @@ export default function StepContent({ step, subStep, techniqueOnly = false, intr
       return (
         <div className="step-content">
           <div className="step-number">{String(step.step + 1).padStart(2, '0')}</div>
-          <h2 className="step-heading">{step.heading}</h2>
-          <p className="step-body step-body--intro">{step.intro}</p>
+          <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
+          <p className="step-body step-body--intro">{parseBody(step.intro)}</p>
           {step.question && (
             <div className="step-question">
               <div className="step-question__label">Ask your coordinator</div>
@@ -133,8 +150,8 @@ export default function StepContent({ step, subStep, techniqueOnly = false, intr
     return (
       <div className="step-content">
         <div className="step-number">{String(step.step + 1).padStart(2, '0')}</div>
-        <h2 className="step-heading">{step.heading}</h2>
-        <p className="step-body step-body--intro">{step.intro}</p>
+        <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
+        <p className="step-body step-body--intro">{parseBody(step.intro)}</p>
         <div className="step-technique" key={subStep}>
           <div className="step-technique__label">
             {sub.technique}
@@ -160,7 +177,7 @@ export default function StepContent({ step, subStep, techniqueOnly = false, intr
   return (
     <div className="step-content">
       <div className="step-number">{String(step.step + 1).padStart(2, '0')}</div>
-      <h2 className="step-heading">{step.heading}</h2>
+      <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
       {renderParagraphs(step.body, 'step-body')}
       {!hideQuestion && step.question && (
         <div className="step-question">

@@ -6,11 +6,11 @@ const STEPS = [
   {
     step: 0,
     heading: 'The Search',
-    body: `To find eligible participants, researchers comb through patient records looking for the right lab values, the right diagnosis codes, the right clinical history.
+    body: `To find eligible participants, researchers comb through patient records looking for the right lab values, the right diagnosis codes, AND the right clinical history.
 
 While a human coordinator might review a few hundred charts, AI can screen hundreds of thousands of records across entire health systems at once. This expands trial reach to include participants from underrepresented groups.[18]
 
-Though your record was reviewed for research purposes before you had any say in it, that's narrower than it sounds: the algorithm checks whether you match the criteria and moves on. It doesn't copy your data or retain it.[1]`,
+Though your record was reviewed for research purposes before you had any say in it, that's a more limited intrusion than it sounds: the algorithm only checks whether you match the criteria and moves on — it doesn't copy or retain your data.[1]`,
     citationIds: [1, 18],
     question: 'Who authorized the screening of my record, and can I see the contract governing what the sponsor can do with the fact that I was found eligible?',
     questionHint: 'Look for a specific IRB approval number. "Our IRB approved it" without details is a non-answer.',
@@ -40,7 +40,7 @@ Depending on the trial you join, you may use wearables to log activity, heart ra
   {
     step: 3,
     heading: 'The Vulnerabilities',
-    body: `Your data can't just be set away from the hospital database to be analyzed immediately, since it contains sensitive information that is directly linked to you. A study from 2000 found that ZIP code, date of birth, and sex alone were sufficient to uniquely identify 87% of Americans from publicly available data.[7]
+    body: `Your data can't just be set away from the hospital database to be analyzed immediately, since it contains sensitive information that is directly linked to you. A study from 2000 found that ZIP code, date of birth, and sex alone were sufficient to uniquely identify 87% of Americans from publicly available data.[7] It works because many ZIP codes are small enough that your exact birthday and sex make you the only person who fits all three.
 
 However, clinical studies have strategies to protect study data from allowing people to identify participants. A 2022 analysis of more than 10,000 U.S. news publications found no documented cases of patient re-identification from clinical research data.[13]
 
@@ -96,7 +96,7 @@ This is where your data may move into commercial hands. By 2020, Mayo Clinic had
 
 Pooled datasets change that arithmetic. AI models scan for patterns across the full dataset: certain lab values paired with certain diagnoses, predicting who responds to a treatment and who doesn't. Using this analysis, scientists are able to make progress on understanding whether a treatment will be effective for a condition.
 
-For common conditions, your record is one of many. For rare ones, it may be one of just a few, which makes it both more scientifically valuable and, as you saw earlier, harder to fully anonymize.[4]`,
+For common conditions, your record is one of many. For rare ones, it may be one of just a few, which makes it both more scientifically valuable and harder to fully anonymize.[4]`,
     citationIds: [4],
     question: 'Will AI models trained on this dataset be commercialized, and do participants have any rights in that process?',
     questionHint: 'Most sponsors retain commercial rights to any discoveries — that\'s standard. What\'s rarer is any form of participant benefit-sharing. If it exists, it should be in writing.',
@@ -130,11 +130,13 @@ Synthetic data replaces real records with statistically generated ones: artifici
   {
     step: 9,
     heading: 'Your Questions',
-    body: `These risks aren't the same for everyone. If your participation reveals something with real consequences, like a stigmatized diagnosis that you haven't disclosed to people in your life, the stakes of a failure are higher for you than for someone else. 
+    body: `These risks aren't the same for everyone. If your participation reveals something with real consequences — a stigmatized diagnosis you haven't disclosed, a pregnancy, an identity — the stakes of a failure are higher for you than for someone else. The rarer your condition, the more uniquely identifiable your record may be.
 
-But it's worth keeping the inference risk in perspective. In 2023, Duke University researchers found data brokers openly selling lists of people flagged for depression, anxiety, and bipolar disorder — bundled with ethnicity, net worth, and zip code — for as little as $275 per 5,000 aggregated records.[16] The sensitive categories that represent inference risks in a clinical trial, like your mental health, your pregnancy status, your identity, are likely already for sale somewhere, derived from your browsing history and purchase patterns.
+A few things worth keeping in mind:
 
-It's good to remember what participation makes possible. Across oncology drugs approved by the FDA, over 12,000 trial participants contributed to each drug's pre-license studies.[19] Participants themselves often gain something concrete too: closer monitoring, more frequent contact with specialists, and sometimes access to treatments not yet available anywhere else.
+• The sensitive categories that represent inference risks in a clinical trial — your mental health, your pregnancy status, your identity — are likely already for sale. In 2023, Duke University researchers found data brokers openly selling lists of people flagged for depression, anxiety, and bipolar disorder, bundled with ethnicity, net worth, and ZIP code, for as little as $275 per 5,000 records.[16]
+
+• Participation makes things possible. Across oncology drugs approved by the FDA, over 12,000 trial participants contributed to each drug's pre-license studies.[19] Participants often gain something concrete too: closer monitoring, more frequent contact with specialists, and sometimes access to treatments not yet available anywhere else.
 
 What's right for someone else may not be right for you. These questions are how you figure out which is which.`,
     citationIds: [16, 19],

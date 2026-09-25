@@ -1,3 +1,5 @@
+import { IDENTIFIER_GRAY, ACCENT } from '../data/bars';
+import { ridgePoint, ridgePathD, RIDGE_VARIANTS, hashInt } from '../utils/ridgeGeometry';
 
 // 6×5 grid layout
 //  0  1  2  3  4  5
@@ -12,41 +14,67 @@ const USER_CELL = 9; // row 1 col 3 — upper-center
 // Step 6: cells where the shared pattern lights up (includes user's cell)
 const PATTERN_CELLS = new Set([0, 5, 9, 13, 17, 18, 23, 24, 29]);
 
-const PATTERN_A_ID = 'diagnosis';
-const PATTERN_B_ID = 'wearable';
+// ─── Mini ridge print ───────────────────────────────────────────────────────
+// Each grid cell renders a small stamp-sized version of the same concentric
+// arch/loop print used in the main view — nested rings, legs meeting the arc
+// at theta=180/0deg — not a separate bar-chart visual system.
 
-// Step 8: bars highlighted green in each lit cell
-const STEP8_IDS = ['zip', 'wearable'];
+const MINI_VIEW = 64;
+const MINI_CX = MINI_VIEW / 2;
+const MINI_LEG_BOTTOM = MINI_VIEW - 4;
+const MINI_MAX_R = 26;
+const MINI_MIN_R = 7;
+const MINI_CY = MINI_LEG_BOTTOM - (MINI_LEG_BOTTOM - MINI_MAX_R) * 0.62;
+const MINI_RINGS = 4;
 
-const GENERALIZED_SHADES = { dob: '#c2cdd6', zip: '#8a9aa4', diagnosis: '#5c6e78' };
-
-// Muted palette for crowd bars — grey, green, red, blue, purple
-const CROWD_PALETTE = ['#9EAAB5', '#6a9068', '#C45E38', '#5a6e98', '#7a5a90', '#3A9A8F','#8B3A2A'];
-
-function crowdBarColor(cellIdx, barIdx) {
-  const h = (((cellIdx * 2654435761) ^ (barIdx * 2246822519)) >>> 0);
-  return CROWD_PALETTE[h % CROWD_PALETTE.length];
+// Deterministic per-cell variant offset so cells vary which rings are
+// full/partial/stub, evoking "similar but unique" prints without per-render
+// randomness.
+function ringVariantFor(cellIdx, ringIdx) {
+  const h = hashInt(cellIdx * 31 + ringIdx * 7 + 1);
+  return RIDGE_VARIANTS[h % RIDGE_VARIANTS.length];
 }
 
-function MiniBar({ color, highlighted, dimmed }) {
-  const opacity = dimmed ? 0.15 : highlighted ? 1 : 0.65;
+function miniRidgeGeometry(cellIdx, ringIdx) {
+  const t = MINI_RINGS > 1 ? ringIdx / (MINI_RINGS - 1) : 0;
+  const r = MINI_MAX_R - t * (MINI_MAX_R - MINI_MIN_R);
+  const strokeWidth = 2.2 - t * 1.3;
+  const shape = ringVariantFor(cellIdx, ringIdx);
+  const d = ridgePathD(MINI_CX, MINI_CY, MINI_LEG_BOTTOM, r, shape);
+  const apex = ridgePoint(MINI_CX, MINI_CY, r, 90);
+  return { d, strokeWidth, apex };
+}
+
+function MiniPrint({ cellIdx, color, accentColor, opacity, ringHighlights }) {
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '4px',
-        borderRadius: '0',
-        marginBottom: '1px',
-        backgroundColor: color,
-        opacity,
-        boxShadow: 'none',
-        transition: 'opacity 500ms ease, box-shadow 500ms ease, background-color 500ms ease',
-        flexShrink: 0,
-      }}
-    />
+    <svg
+      className="mini-fp-print"
+      viewBox={`0 0 ${MINI_VIEW} ${MINI_VIEW}`}
+      preserveAspectRatio="xMidYMax meet"
+      style={{ opacity, transition: 'opacity 500ms ease' }}
+      aria-hidden="true"
+    >
+      {Array.from({ length: MINI_RINGS }, (_, ringIdx) => {
+        const { d, strokeWidth, apex } = miniRidgeGeometry(cellIdx, ringIdx);
+        const isHighlighted = ringHighlights && ringHighlights.has(ringIdx);
+        return (
+          <g key={ringIdx}>
+            <path
+              d={d}
+              fill="none"
+              stroke={isHighlighted ? accentColor : color}
+              strokeWidth={isHighlighted ? strokeWidth + 0.5 : strokeWidth}
+              strokeLinecap="round"
+            />
+            {isHighlighted && (
+              <circle cx={apex.x} cy={apex.y} r={2} fill={accentColor} />
+            )}
+          </g>
+        );
+      })}
+    </svg>
   );
 }
-
 
 function MiniFingerprint({ bars, cellIdx, step, entryDelay, isExiting, isPreExit, isLit, suppressEntry }) {
   const isUser = cellIdx === USER_CELL;
@@ -71,6 +99,36 @@ function MiniFingerprint({ bars, cellIdx, step, entryDelay, isExiting, isPreExit
     animation = `${flyAnim} 420ms cubic-bezier(0.22,1,0.36,1) ${staggerDelay}ms both`;
   }
 
+  // Derive this cell's print color + which rings (if any) should read as
+  // "highlighted" — mirrors the old per-bar highlight/dim logic, just
+  // applied to ring positions instead of stacked bars.
+  let printOpacity = 1;
+  let printColor = isUser ? 'var(--ink)' : IDENTIFIER_GRAY;
+  const ringHighlights = new Set();
+
+  if (isPreExit) {
+    printOpacity = 0.4;
+  } else if (step === 9) {
+    printOpacity = isLit ? 1 : 0.3;
+    if (isLit) {
+      // Two rings stand in for the STEP8_IDS fields being called out.
+      ringHighlights.add(1);
+      ringHighlights.add(3);
+    }
+  } else if (step === 6) {
+    if (isPattern) {
+      ringHighlights.add(1); // stands in for PATTERN_A_ID
+      ringHighlights.add(3); // stands in for PATTERN_B_ID
+      printOpacity = 1;
+    } else {
+      printOpacity = 0.3;
+    }
+  }
+
+  if (!isUser) {
+    printColor = isPattern && step === 6 ? IDENTIFIER_GRAY : '#7a7062';
+  }
+
   return (
     <div
       className={`mini-fp${isUser ? ' mini-fp--user' : ''}`}
@@ -80,61 +138,24 @@ function MiniFingerprint({ bars, cellIdx, step, entryDelay, isExiting, isPreExit
         animation,
       }}
     >
-      {bars.map((bar, barIdx) => {
-        if (!bar.visible) return null;
-
-        const isUserCell = cellIdx === USER_CELL;
-        let color = isUserCell ? bar.color : crowdBarColor(cellIdx, barIdx);
-        let highlighted = false;
-        let dimmed = false;
-
-        if (isPreExit) {
-          dimmed = true;
-        } else if (step === 9) {
-          if (!isLit) {
-            dimmed = true;
-          } else if (STEP8_IDS.includes(bar.id)) {
-            color = '#7ab832';
-            highlighted = true;
-          } else {
-            dimmed = true;
-          }
-        } else if (step === 6) {
-          if (isPattern) {
-            if (bar.id === PATTERN_A_ID) { color = '#7ab832'; highlighted = true; }
-            else if (bar.id === PATTERN_B_ID) { color = '#026CAC'; highlighted = true; }
-            else dimmed = true;
-          } else {
-            dimmed = true;
-          }
-        }
-
-        if (bar.isGeneralized && !highlighted) {
-          color = GENERALIZED_SHADES[bar.id] ?? color;
-        }
-
-        return (
-          <MiniBar
-            key={bar.id}
-            color={color}
-            highlighted={highlighted}
-            dimmed={dimmed}
-          />
-        );
-      })}
+      <MiniPrint
+        cellIdx={cellIdx}
+        color={printColor}
+        accentColor={ACCENT}
+        opacity={printOpacity}
+        ringHighlights={ringHighlights}
+      />
     </div>
   );
 }
 
 export default function FingerprintGrid({ bars, step, entryDelay, isExiting, isPreExit }) {
-  const visibleBars = bars.filter(b => b.visible);
-
   return (
     <div className="fp-grid">
       {Array.from({ length: GRID_SIZE }, (_, i) => (
         <MiniFingerprint
           key={i}
-          bars={visibleBars}
+          bars={bars}
           cellIdx={i}
           step={step}
           entryDelay={entryDelay}

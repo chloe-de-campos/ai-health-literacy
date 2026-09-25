@@ -11,37 +11,183 @@ import {
   PATTERN_A_ID,
   PATTERN_B_ID,
   REID_IDS,
+  INK,
+  IDENTIFIER_GRAY,
+  ACCENT,
+  RIDGE_ORDER,
 } from '../data/bars';
+import { ridgePoint as sharedRidgePoint, ridgePathD as sharedRidgePathD, RIDGE_VARIANTS } from '../utils/ridgeGeometry';
+
+// ─── Ridge geometry ───────────────────────────────────────────────────────────
+// Each field maps to one concentric arch/loop ridge: two vertical legs plus a
+// large arc over the top, nested at decreasing radius toward the center — a
+// hand-drawn technical-blueprint take on a fingerprint loop pattern.
+
+const RIDGE_VIEW_W = 520;
+const RIDGE_VIEW_H = 500;
+const RIDGE_CX = RIDGE_VIEW_W * 0.5;
+const RIDGE_LEG_BOTTOM = RIDGE_VIEW_H - 18;
+const RIDGE_MAX_R = 226;
+const RIDGE_MIN_R = 46;
+// "Shoulder line" — every ring's leg meets its arc at theta=180deg/0deg, where
+// sin(theta)=0, so this y-coordinate is identical for every ring regardless
+// of radius. That shared height is what keeps the leg-to-arc joint a clean
+// 90-degree corner instead of a kink.
+const RIDGE_CY = RIDGE_LEG_BOTTOM - (RIDGE_LEG_BOTTOM - RIDGE_MAX_R) * 0.62;
+
+// Point/path builders bound to this view's center and leg baseline — thin
+// wrappers over the shared, scale-independent formulas in utils/ridgeGeometry
+// so the mini prints in the crowd grid can reuse the exact same math.
+function ridgePoint(r, thetaDeg) {
+  return sharedRidgePoint(RIDGE_CX, RIDGE_CY, r, thetaDeg);
+}
+function ridgePathD(r, shape) {
+  return sharedRidgePathD(RIDGE_CX, RIDGE_CY, RIDGE_LEG_BOTTOM, r, shape);
+}
+
+function ridgeGeometry(id) {
+  const idx = Math.max(0, RIDGE_ORDER.indexOf(id));
+  const n = RIDGE_ORDER.length - 1;
+  const t = n > 0 ? idx / n : 0;
+  const r = RIDGE_MAX_R - t * (RIDGE_MAX_R - RIDGE_MIN_R);
+  const strokeWidth = 3.4 - t * 2.1; // thicker outer, thinner inner
+  const shape = RIDGE_VARIANTS[idx % RIDGE_VARIANTS.length];
+  const d = ridgePathD(r, shape);
+  // Topmost point of the ring (theta=90deg) — used for the red callout dot / badge.
+  const apex = ridgePoint(r, 90);
+  return { d, strokeWidth, apex, r };
+}
+
+// Irregular, non-repeating dash rhythm — signals "this ridge encodes
+// distinguishing data," deliberately not a uniform repeating pattern.
+const IRREGULAR_DASH = '3 11 6 2 9 4 12 3 5 10 2 7';
+
+function RidgeItem({ bar, onBarSelect }) {
+  const [open, setOpen] = useState(false);
+  const [anchorRect, setAnchorRect] = useState(null);
+  const closeTimer = useRef(null);
+  const canOpen = bar.visible && bar.description;
+  const { d, strokeWidth, apex } = ridgeGeometry(bar.id);
+
+  // "Active" = this step's content is actively discussing this field — the
+  // solid ink ridge crossfades to a dashed version of itself, same color,
+  // same position. Never rendered in red; red stays a sparing accent.
+  const isActive = !!bar.glow && bar.visible;
+  const showAccentDot = isActive && bar.color === ACCENT;
+  const keyframeActive = bar.isEntering || bar.isExiting || bar.isDrawing;
+
+  // Hover-driven, not click-driven: the popover appears as soon as the
+  // pointer enters the ridge's hit target and disappears as soon as it
+  // leaves. A short close delay lets the pointer cross the small gap onto
+  // the popover itself (e.g. to read a longer "why it's collected" note)
+  // without it vanishing mid-travel. Touch devices have no hover, so tap
+  // still opens/toggles it there.
+  function clearCloseTimer() {
+    if (closeTimer.current) { clearTimeout(closeTimer.current); closeTimer.current = null; }
+  }
+  function handleEnter(e) {
+    if (!canOpen || onBarSelect) return;
+    clearCloseTimer();
+    setAnchorRect(e.currentTarget.getBoundingClientRect());
+    setOpen(true);
+  }
+  function handleLeave() {
+    if (!canOpen || onBarSelect) return;
+    clearCloseTimer();
+    closeTimer.current = setTimeout(() => setOpen(false), 120);
+  }
+  function handleClick(e) {
+    if (!canOpen) return;
+    if (onBarSelect) { onBarSelect(bar); return; }
+    setAnchorRect(e.currentTarget.getBoundingClientRect());
+    setOpen(o => !o);
+  }
+
+  useEffect(() => () => clearCloseTimer(), []);
+
+  if (!bar.visible) return null;
+
+  const classes = ['ridge'];
+  if (keyframeActive) classes.push('ridge-draw');
+  if (bar.isSuppressedGhost) classes.push('ridge-suppressed');
+
+  return (
+    <g
+      className={classes.join(' ')}
+      data-bar-id={bar.id}
+      style={{ '--ridge-delay': `${bar.enterDelay ?? bar.scanDelay ?? 0}ms`, opacity: bar.isSuppressedGhost ? 0.3 : (bar.opacity ?? 1) }}
+    >
+      {/* Wide invisible hit target for hover/click/tap */}
+      {canOpen && (
+        <path d={d} fill="none" stroke="transparent" strokeWidth={strokeWidth + 16}
+          style={{ cursor: 'pointer' }}
+          onMouseEnter={handleEnter} onMouseLeave={handleLeave} onClick={handleClick} />
+      )}
+      <path
+        d={d}
+        className="ridge-solid"
+        fill="none"
+        stroke="var(--ink)"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        pathLength={keyframeActive ? 1 : undefined}
+        style={{
+          opacity: isActive ? 0 : 1,
+          strokeDasharray: bar.isSuppressedGhost ? '2 4' : (keyframeActive ? 1 : 'none'),
+          strokeDashoffset: keyframeActive ? 1 : 0,
+        }}
+      />
+      <path
+        d={d}
+        className="ridge-dashed"
+        fill="none"
+        stroke="var(--ink)"
+        strokeWidth={strokeWidth}
+        strokeLinecap="round"
+        strokeDasharray={IRREGULAR_DASH}
+        style={{ opacity: isActive ? 1 : 0 }}
+      />
+      {showAccentDot && (
+        <circle className="ridge-accent-dot" cx={apex.x} cy={apex.y} r={4.5} fill="var(--red)" />
+      )}
+      {open && canOpen && !onBarSelect && (
+        <BarPopover
+          bar={bar}
+          description={bar.description}
+          onClose={() => setOpen(false)}
+          anchorRect={anchorRect}
+          variant="compact"
+          onMouseEnter={clearCloseTimer}
+          onMouseLeave={handleLeave}
+        />
+      )}
+    </g>
+  );
+}
+
+function FingerprintRidgeField({ bars, stepIndex, onBarSelect }) {
+  return (
+    <svg
+      className="fingerprint-ridges"
+      viewBox={`0 0 ${RIDGE_VIEW_W} ${RIDGE_VIEW_H}`}
+      preserveAspectRatio="xMidYMax meet"
+      role="img"
+      aria-label="Fingerprint-style visualization of your health record fields"
+    >
+      {bars.map(bar => <RidgeItem key={bar.id} bar={bar} onBarSelect={onBarSelect} />)}
+    </svg>
+  );
+}
 
 // ─── Bar state derivation ─────────────────────────────────────────────────────
 
-const DEID_GRAY = '#9EAAB5';
+const DEID_GRAY = IDENTIFIER_GRAY;
 const BAR_HEIGHT = 28;
 const BAR_SCALE = 1.0;
 
-const GENERALIZED_SHADES = { dob: '#c2cdd6', zip: '#8a9aa4', diagnosis: '#5c6e78' };
+// Tonal ramp off the shared ink/gray system, not a separate palette.
+const GENERALIZED_SHADES = { dob: IDENTIFIER_GRAY, zip: '#6b6157', diagnosis: '#4a4038' };
 
-
-function shiftHue(hex, degrees) {
-  const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255);
-  const max = Math.max(r, g, b), min = Math.min(r, g, b), d = max - min;
-  let h = 0;
-  if (d > 0) {
-    if (max === r) h = ((g - b) / d + 6) % 6;
-    else if (max === g) h = (b - r) / d + 2;
-    else h = (r - g) / d + 4;
-    h /= 6;
-  }
-  const s = max === 0 ? 0 : d / max, v = max;
-  h = (h + degrees / 360 + 1) % 1;
-  const i = Math.floor(h * 6), f = h * 6 - i;
-  const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
-  const [nr, ng, nb] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i % 6];
-  const x = n => Math.round(n * 255).toString(16).padStart(2, '0');
-  return `#${x(nr)}${x(ng)}${x(nb)}`;
-}
-
-const NOISE_HUE_SHIFTS = { labs: -40, wearable: 30 };
 
 function applyDeId(bar, { suppression = true, generalization = true } = {}) {
   if (suppression && SUPPRESSED_IDS.includes(bar.id)) {
@@ -86,7 +232,8 @@ function deriveBars(step, prevStep, subStep) {
         ...base, color: c, glow: c,
         isProtected: true,
         scrambleDelay: i * 28,
-        flashColors: Array.from({ length: 4 }, () => `hsl(${Math.floor(Math.random() * 360)}, 40%, 52%)`),
+        // Flicker between the established palette, not random full-spectrum hues.
+        flashColors: [ACCENT, INK, IDENTIFIER_GRAY, ACCENT],
       };
       if (step < 7 && prevStep >= 7) return { ...base, color: c, isExiting: true, enterDelay: 0 };
       return { ...base, color: c, glow: c };
@@ -116,7 +263,7 @@ function deriveBars(step, prevStep, subStep) {
     // de-identification is applied, motivating the protections in step 4.
     if (step === 3) {
       if (REID_IDS.includes(bar.id)) {
-        return { ...base, glow: '#a90533', color: '#a90533', opacity: 1 };
+        return { ...base, glow: ACCENT, color: ACCENT, opacity: 1 };
       }
       return base;
     }
@@ -139,7 +286,8 @@ function deriveBars(step, prevStep, subStep) {
       if (s >= 2 && NOISE_IDS.includes(bar.id)) {
         return {
           ...base,
-          color: shiftHue(bar.color, NOISE_HUE_SHIFTS[bar.id] ?? 0),
+          color: IDENTIFIER_GRAY,
+          isNoised: true,
         };
       }
       return base;
@@ -157,8 +305,8 @@ function deriveBars(step, prevStep, subStep) {
 
     // Step 6: pattern highlighting — two bars signal a treatment response
     if (step === 6) {
-      if (bar.id === PATTERN_A_ID) return { ...base, color: '#7ab832', opacity: 1, glow: '#7ab832' };
-      if (bar.id === PATTERN_B_ID) return { ...base, color: '#026CAC', opacity: 1, glow: '#026CAC' };
+      if (bar.id === PATTERN_A_ID) return { ...base, color: ACCENT, opacity: 1, glow: ACCENT };
+      if (bar.id === PATTERN_B_ID) return { ...base, color: ACCENT, opacity: 1, glow: ACCENT };
       if (!base.visible) return base;
       return { ...base, opacity: 0.25 };
     }
@@ -169,9 +317,17 @@ function deriveBars(step, prevStep, subStep) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-// anchorRect: DOMRect of the tapped bar — when provided the popover renders via
-// a portal at position:fixed so it escapes any overflow:hidden / zoom ancestor.
-function BarPopover({ bar, description, onClose, anchorRect }) {
+// anchorRect: DOMRect of the tapped/hovered bar — when provided the popover
+// renders via a portal at position:fixed so it escapes any overflow:hidden /
+// zoom ancestor (and, for ridges, the SVG coordinate space, which can't host
+// an arbitrary HTML div directly).
+//
+// variant: 'compact' (used by the desktop ridge hover popover) sizes and
+// anchors a small grey box right next to the hovered element, flipping side
+// / clamping to the viewport rather than ever spanning most of the screen.
+// Omitted (FingerprintBar's existing mobile tap-to-open sheet) keeps its
+// original full-width bottom-sheet layout — untouched.
+function BarPopover({ bar, description, onClose, anchorRect, variant, onMouseEnter, onMouseLeave }) {
   const ref = useRef(null);
 
   useEffect(() => {
@@ -189,22 +345,56 @@ function BarPopover({ bar, description, onClose, anchorRect }) {
     };
   }, [onClose]);
 
-  const fixedStyle = anchorRect ? {
-    position: 'fixed',
-    top: 'calc(28vh + 28px)',
-    bottom: '60px',
-    left: '16px',
-    right: '16px',
-    width: 'auto',
-    maxHeight: 'none',
-    overflowY: 'auto',
-    zIndex: 1000,
-  } : {};
+  let fixedStyle = {};
+  if (variant === 'compact' && anchorRect) {
+    const PAD = 12;
+    const WIDTH = 260;
+    let left = anchorRect.right + PAD;
+    if (left + WIDTH + PAD > window.innerWidth) left = anchorRect.left - WIDTH - PAD;
+    left = Math.max(PAD, Math.min(left, window.innerWidth - WIDTH - PAD));
+    const top = Math.max(PAD, Math.min(anchorRect.top, window.innerHeight - PAD - 220));
+    fixedStyle = {
+      position: 'fixed',
+      top: `${top}px`,
+      left: `${left}px`,
+      width: `${WIDTH}px`,
+      maxHeight: `min(280px, calc(100vh - ${PAD * 2}px))`,
+      overflowY: 'auto',
+      zIndex: 1000,
+    };
+  } else if (anchorRect) {
+    fixedStyle = {
+      position: 'fixed',
+      top: 'calc(28vh + 28px)',
+      bottom: '60px',
+      left: '16px',
+      right: '16px',
+      width: 'auto',
+      maxHeight: 'none',
+      overflowY: 'auto',
+      zIndex: 1000,
+    };
+  }
+
+  // bar.color carries the field's identity tint for the ridge itself, but
+  // that's `INK` for most fields — which now equals this popover's own dark
+  // background, making an inline-styled label/border invisible-on-invisible.
+  // Only defer to bar.color when it's a genuine accent (gray/red); otherwise
+  // fall back to the popover's own readable foreground.
+  const accentColor = (bar.color === IDENTIFIER_GRAY || bar.color === ACCENT) ? bar.color : 'var(--ink)';
 
   const node = (
-    <div ref={ref} className="bar-popover" role="dialog" aria-label={bar.label} style={{ borderLeftColor: bar.color, ...fixedStyle }}>
+    <div
+      ref={ref}
+      className={`bar-popover${variant === 'compact' ? ' bar-popover--compact' : ''}`}
+      role="dialog"
+      aria-label={bar.label}
+      style={{ borderLeftColor: accentColor, ...fixedStyle }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
       <div className="bar-popover__header">
-        <span className="bar-popover__label" style={{ color: bar.color }}>{bar.label}</span>
+        <span className="bar-popover__label" style={{ color: accentColor }}>{bar.label}</span>
         <button className="bar-popover__close" onClick={onClose} aria-label="Close">×</button>
       </div>
       <p className="bar-popover__desc">{description}</p>
@@ -412,9 +602,16 @@ function FingerprintBar({ bar, stepIndex, vertical = false, onBarSelect }) {
 }
 
 function FingerprintCore({ bars, stepIndex, dimmed = false, vertical = false, onBarSelect }) {
+  if (!vertical) {
+    return (
+      <div className="fingerprint-core fingerprint-core--ridges" style={{ opacity: dimmed ? 0.22 : 1, position: 'relative' }}>
+        <FingerprintRidgeField bars={bars} stepIndex={stepIndex} onBarSelect={onBarSelect} />
+      </div>
+    );
+  }
   return (
     <div
-      className={`fingerprint-core${vertical ? ' fingerprint-core--vertical' : ''}`}
+      className="fingerprint-core fingerprint-core--vertical"
       style={{ opacity: dimmed ? 0.22 : 1, position: 'relative' }}
     >
       {bars.map(bar => (
@@ -461,6 +658,13 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
   const prevStepRef = useRef(step);
   const prevStep = prevStepRef.current;
   useEffect(() => { prevStepRef.current = step; });
+
+  // Retrigger the scan animation each time step 0 is entered (including initial load
+  // and the first scroll down, where activeStep is already 0 so React skips re-render).
+  const [scanKey, setScanKey] = useState(0);
+  useEffect(() => {
+    if (step === 0) setScanKey(k => k + 1);
+  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Grid shown at pool (5) and pattern-finding (6) steps
   const showGrid = step === 5 || step === 6;
@@ -547,7 +751,7 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
             style={{ ...(displayMode === 'to-single' ? growStyle : {}), zIndex: displayMode === 'to-single' ? 2 : 1 }}
           >
             <div className={isLocked ? 'fp-bars-locked' : ''} style={vertical && !showGrid ? { height: '100%' } : {}}>
-              <FingerprintCore bars={bars} stepIndex={step} vertical={vertical && !showGrid} onBarSelect={onBarSelect} />
+              <FingerprintCore key={step === 0 ? `scan-${scanKey}` : 'core'} bars={bars} stepIndex={step} vertical={vertical && !showGrid} onBarSelect={onBarSelect} />
             </div>
           </div>
         )}

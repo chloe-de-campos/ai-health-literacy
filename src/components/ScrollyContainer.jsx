@@ -1,7 +1,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import scrollama from 'scrollama';
 import STEPS from '../data/steps';
-import StepContent from './StepContent';
+import StepContent, { parseBody, renderHeading } from './StepContent';
 import ZoomOutView from './ZoomOutView';
 import CitationPopover from './CitationPopover';
 
@@ -21,7 +21,7 @@ function Step4StickyContent({ step, subStep }) {
     return (
       <div className="step-content">
         <div className="step-number">0{step.step + 1}</div>
-        <h2 className="step-heading">{step.heading}</h2>
+        <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
         <div className="step-outro">
           <div className="step-technique__label" style={{ marginBottom: '14px' }}>
             What de-identification doesn't cover
@@ -36,8 +36,8 @@ function Step4StickyContent({ step, subStep }) {
   return (
     <div className="step-content">
       <div className="step-number">0{step.step + 1}</div>
-      <h2 className="step-heading">{step.heading}</h2>
-      <p className="step-body step-body--intro">{step.intro}</p>
+      <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
+      <p className="step-body step-body--intro">{parseBody(step.intro)}</p>
       <div className="step-technique" key={subStep}>
         <div className="step-technique__label">
           {sub.technique}

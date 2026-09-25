@@ -75,21 +75,21 @@ function Modal({ onClose }) {
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
           <div>
-            <div style={{ fontFamily: 'IBM Plex Sans, system-ui, sans-serif', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8896a3', marginBottom: '4px' }}>
+            <div style={{ fontFamily: 'IBM Plex Mono, ui-monospace, monospace', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8896a3', marginBottom: '4px' }}>
               Before you consent
             </div>
-            <h3 id="checklist-title" style={{ fontFamily: 'IBM Plex Serif, Georgia, serif', fontSize: '1rem', fontWeight: 700, color: '#1a2b38', margin: 0 }}>
+            <h3 id="checklist-title" style={{ fontFamily: 'Archivo, sans-serif', fontStretch: 'condensed', textTransform: 'uppercase', fontSize: '1.05rem', fontWeight: 800, color: '#1a2b38', margin: 0 }}>
               Questions to ask your coordinator
             </h3>
           </div>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: '1px solid #c8c0b0', borderRadius: '3px', color: '#4a6478', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '3px 7px', marginLeft: '16px', flexShrink: 0 }}>×</button>
+          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: '1px solid #c8c0b0', borderRadius: '0', color: '#4a6478', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '3px 7px', marginLeft: '16px', flexShrink: 0 }}>×</button>
         </div>
 
         {/* Questions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
           {QUESTIONS.map(({ question }, i) => (
             <div key={i} style={{ borderLeft: '2px solid #c8c0b0', paddingLeft: '14px', paddingTop: '2px', paddingBottom: '2px' }}>
-              <p style={{ fontFamily: 'IBM Plex Sans, system-ui, sans-serif', fontSize: '0.83rem', color: '#1a2b38', fontStyle: 'italic', lineHeight: 1.55, margin: 0 }}>
+              <p style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '0.9rem', color: '#1a2b38', fontStyle: 'italic', lineHeight: 1.55, margin: 0 }}>
                 {question}
               </p>
             </div>
@@ -102,14 +102,14 @@ function Modal({ onClose }) {
           style={{
             alignSelf: 'flex-start',
             display: 'flex', alignItems: 'center', gap: '6px',
-            background: 'none', border: '1px solid #2e6da6',
-            borderRadius: '4px', padding: '8px 14px',
-            color: '#2e6da6', fontSize: '0.72rem',
-            fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
+            background: 'none', border: '1px solid #a90533',
+            borderRadius: '0', padding: '8px 14px',
+            color: '#a90533', fontSize: '0.72rem',
+            fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
             fontWeight: 600, letterSpacing: '0.04em',
             cursor: 'pointer', transition: 'background 150ms ease',
           }}
-          onMouseEnter={e => e.currentTarget.style.background = '#e8f0f8'}
+          onMouseEnter={e => e.currentTarget.style.background = '#fbe9e6'}
           onMouseLeave={e => e.currentTarget.style.background = 'none'}
         >
           <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -136,24 +136,24 @@ export default function ZoomOutView() {
 
   return (
     <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms ease' }}>
-      <div style={{ fontFamily: 'IBM Plex Sans, system-ui, sans-serif', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8896a3', marginBottom: '6px' }}>
+      <div style={{ fontFamily: 'IBM Plex Mono, ui-monospace, monospace', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8896a3', marginBottom: '6px' }}>
         Before you sign
       </div>
-      <p style={{ fontFamily: 'IBM Plex Sans, system-ui, sans-serif', fontSize: '0.82rem', color: '#4a6478', lineHeight: 1.55, margin: '0 0 16px' }}>
+      <p style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '0.88rem', color: '#4a6478', lineHeight: 1.55, margin: '0 0 16px' }}>
         Ten questions — one for each step. The answers tell you whether the trial has thought carefully about your data, or hasn't.
       </p>
       <button
         onClick={() => setModalOpen(true)}
         style={{
           display: 'flex', alignItems: 'center', gap: '6px',
-          background: 'none', border: '1px solid #2e6da6',
-          borderRadius: '4px', padding: '9px 14px',
-          color: '#2e6da6', fontSize: '0.72rem',
-          fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
+          background: 'none', border: '1px solid #a90533',
+          borderRadius: '0', padding: '9px 14px',
+          color: '#a90533', fontSize: '0.72rem',
+          fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
           fontWeight: 600, letterSpacing: '0.04em',
           cursor: 'pointer', transition: 'background 150ms ease',
         }}
-        onMouseEnter={e => e.currentTarget.style.background = '#e8f0f8'}
+        onMouseEnter={e => e.currentTarget.style.background = '#fbe9e6'}
         onMouseLeave={e => e.currentTarget.style.background = 'none'}
       >
         View all questions <span aria-hidden="true">→</span>
