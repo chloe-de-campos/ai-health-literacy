@@ -615,7 +615,10 @@ body {
 
 .step-question__text {
   font-family: 'Atkinson Hyperlegible Next', var(--font-body);
-  font-size: 22px;
+  /* rem, not a fixed 22px: it was the one size that didn't track the root,
+     so it sat 1.5x the body on desktop and 1.75x on mobile (where the body
+     scales down but this didn't) and read oversized. */
+  font-size: 1.3rem;
   font-weight: 500;
   line-height: 1.45;
   color: var(--red);
@@ -1881,6 +1884,12 @@ body {
 
 /* ─── Mobile: Stack layout (desktop fallback, not used when MobileSwipeLayout active) ── */
 @media (max-width: 768px) {
+  /* Keeps the same step up from body copy as desktop, at mobile's smaller
+     body size. */
+  .step-question__text {
+    font-size: 1.15rem;
+  }
+
   /* .fly-in starts at opacity 0 and is revealed by an IntersectionObserver
      in App.js — which returns early on mobile, where MobileSwipeLayout is
      rendered instead. Every step heading that goes through StepContent
