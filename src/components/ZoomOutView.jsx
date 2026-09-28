@@ -6,6 +6,8 @@ const QUESTIONS = STEPS
   .filter(s => s.question)
   .map(s => ({ heading: s.heading, question: s.question }));
 
+// Printed on paper, not read on the dark page — kept light/print-friendly
+// rather than matching the site's aubergine theme.
 function printQuestions() {
   const w = window.open('', '_blank', 'width=700,height=900');
   if (!w) return;
@@ -40,78 +42,33 @@ function Modal({ onClose }) {
   }, [onClose]);
 
   return ReactDOM.createPortal(
-    <div
-      style={{
-        position: 'fixed', inset: 0, zIndex: 1000,
-        background: 'rgba(10,20,30,0.82)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '20px',
-        animation: 'fade-in 180ms ease both',
-      }}
-      onClick={onClose}
-    >
+    <div className="zoom-out-modal-overlay" onClick={onClose}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="checklist-title"
         tabIndex={-1}
-        style={{
-          background: '#fdfaf6',
-          border: '1px solid #e0d6c8',
-          borderRadius: '6px',
-          padding: '28px',
-          maxWidth: '520px',
-          width: '100%',
-          maxHeight: '80vh',
-          overflowY: 'auto',
-          outline: 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0',
-        }}
+        className="zoom-out-modal"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+        <div className="zoom-out-modal__header">
           <div>
-            <div style={{ fontFamily: 'IBM Plex Mono, ui-monospace, monospace', fontSize: '0.62rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8896a3', marginBottom: '4px' }}>
-              Before you consent
-            </div>
-            <h3 id="checklist-title" style={{ fontFamily: 'Archivo, sans-serif', fontStretch: 'condensed', textTransform: 'uppercase', fontSize: '1.05rem', fontWeight: 800, color: '#1a2b38', margin: 0 }}>
-              Questions to ask your coordinator
-            </h3>
+            <div className="zoom-out__label">Before you consent</div>
+            <h3 id="checklist-title" className="zoom-out-modal__title">Questions to ask your coordinator</h3>
           </div>
-          <button onClick={onClose} aria-label="Close" style={{ background: 'none', border: '1px solid #c8c0b0', borderRadius: '0', color: '#4a6478', cursor: 'pointer', fontSize: '1rem', lineHeight: 1, padding: '3px 7px', marginLeft: '16px', flexShrink: 0 }}>×</button>
+          <button onClick={onClose} aria-label="Close" className="bar-popover__close zoom-out-modal__close">×</button>
         </div>
 
-        {/* Questions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+        <div className="zoom-out-modal__list">
           {QUESTIONS.map(({ question }, i) => (
-            <div key={i} style={{ borderLeft: '2px solid #c8c0b0', paddingLeft: '14px', paddingTop: '2px', paddingBottom: '2px' }}>
-              <p style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '0.9rem', color: '#1a2b38', fontStyle: 'italic', lineHeight: 1.55, margin: 0 }}>
-                {question}
-              </p>
+            <div key={i} className="zoom-out-modal__item">
+              <p>{question}</p>
             </div>
           ))}
         </div>
 
-        {/* Print button */}
-        <button
-          onClick={printQuestions}
-          style={{
-            alignSelf: 'flex-start',
-            display: 'flex', alignItems: 'center', gap: '6px',
-            background: 'none', border: '1px solid #a90533',
-            borderRadius: '0', padding: '8px 14px',
-            color: '#a90533', fontSize: '0.72rem',
-            fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
-            fontWeight: 600, letterSpacing: '0.04em',
-            cursor: 'pointer', transition: 'background 150ms ease',
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = '#fbe9e6'}
-          onMouseLeave={e => e.currentTarget.style.background = 'none'}
-        >
+        <button onClick={printQuestions} className="zoom-out__button">
           <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
             <rect x="3" y="1" width="10" height="10" rx="1" />
             <path d="M3 8H1.5A1.5 1.5 0 0 0 0 9.5v3A1.5 1.5 0 0 0 1.5 14h13a1.5 1.5 0 0 0 1.5-1.5v-3A1.5 1.5 0 0 0 14.5 8H13" />
@@ -136,26 +93,20 @@ export default function ZoomOutView() {
 
   return (
     <div style={{ opacity: visible ? 1 : 0, transition: 'opacity 300ms ease' }}>
-      <div style={{ fontFamily: 'IBM Plex Mono, ui-monospace, monospace', fontSize: '0.65rem', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#8896a3', marginBottom: '6px' }}>
-        Before you sign
+      {/* Same rule-and-dot motif as "Ask your coordinator" (.step-question),
+          with a plain (not bold/red) note in place of a question — this is
+          a description of what follows, not something to ask out loud. */}
+      <div className="step-question zoom-out__intro">
+        <svg className="step-question__tail" width="31" height="22" viewBox="0 0 31 22" aria-hidden="true">
+          <path d="M31 0.75 H10 L1 21" stroke="var(--red)" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
+        </svg>
+        <span className="step-question__line" aria-hidden="true" />
+        <span className="step-question__dot" aria-hidden="true" />
+        <span className="step-question__end" aria-hidden="true" />
+        <div className="zoom-out__label">Before you sign</div>
+        <p className="zoom-out__note">Ten questions — one for each step. The answers tell you whether the trial has thought carefully about your data, or hasn't.</p>
       </div>
-      <p style={{ fontFamily: "'Source Serif 4', Georgia, serif", fontSize: '0.88rem', color: '#4a6478', lineHeight: 1.55, margin: '0 0 16px' }}>
-        Ten questions — one for each step. The answers tell you whether the trial has thought carefully about your data, or hasn't.
-      </p>
-      <button
-        onClick={() => setModalOpen(true)}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '6px',
-          background: 'none', border: '1px solid #a90533',
-          borderRadius: '0', padding: '9px 14px',
-          color: '#a90533', fontSize: '0.72rem',
-          fontFamily: 'IBM Plex Mono, ui-monospace, monospace',
-          fontWeight: 600, letterSpacing: '0.04em',
-          cursor: 'pointer', transition: 'background 150ms ease',
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = '#fbe9e6'}
-        onMouseLeave={e => e.currentTarget.style.background = 'none'}
-      >
+      <button onClick={() => setModalOpen(true)} className="zoom-out__button">
         View all questions <span aria-hidden="true">→</span>
       </button>
 
