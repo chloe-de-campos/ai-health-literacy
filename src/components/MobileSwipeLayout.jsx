@@ -70,7 +70,11 @@ function AutoScaledFingerprint({ step, subStep, onBarSelect }) {
   return (
     <div ref={containerRef} className="mobile-fp-strip">
       <div ref={innerRef} style={needsZoom ? {} : { height: '100%' }}>
-        <StickyFingerprint step={step} subStep={subStep} vertical={!needsZoom} onBarSelect={onBarSelect} />
+        {/* vertical={false} everywhere: the ridge print is the visual the
+            rest of the piece is built on — the vertical bars were the
+            pre-redesign look and read as a different product. Steps 5–6
+            still swap themselves to the crowd grid internally. */}
+        <StickyFingerprint step={step} subStep={subStep} vertical={false} onBarSelect={onBarSelect} />
       </div>
     </div>
   );
@@ -173,7 +177,7 @@ export default function MobileSwipeLayout({ onStepChange }) {
 
       {/* Tap hint shown below the fingerprint strip on non-intro slides */}
       {slideIndex !== 0 && (
-        <p className="mobile-fp-hint">Tap a bar to learn more</p>
+        <p className="mobile-fp-hint">Tap a ridge to learn more</p>
       )}
 
       {/* Horizontally snapping slide panels */}
@@ -183,10 +187,20 @@ export default function MobileSwipeLayout({ onStepChange }) {
             <div className="mobile-slide-inner">
               {slide.type === 'intro' && (
                 <div className="mobile-intro-content">
-                  <h1 className="site-title mobile-intro-title">
-                    How AI Uses Your Health Data in a Clinical Trial
+                  <h1 className="mobile-intro-title">
+                    How AI Uses <em>Your Health Data</em> in a Clinical Trial
                   </h1>
-                  <p className="site-subtitle mobile-intro-subtitle">
+                  {/* Same rule motif as the desktop cover's "Before you
+                      join" panel and the "Ask your coordinator" callouts. */}
+                  <div className="mobile-intro-rule" aria-hidden="true">
+                    <svg className="step-question__tail" width="31" height="22" viewBox="0 0 31 22">
+                      <path d="M31 0.75 H10 L1 21" stroke="var(--red)" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
+                    </svg>
+                    <span className="step-question__line" />
+                    <span className="step-question__dot" />
+                    <span className="step-question__end" />
+                  </div>
+                  <p className="mobile-intro-subtitle">
                     Joining a clinical trial means contributing to research that could help thousands of people who share your diagnosis. It also means handing over some of the most sensitive data that exists about you. Understanding what actually happens, step by step, is the only way to make the decision on your own terms.
                   </p>
                   <div className="mobile-swipe-cue">
