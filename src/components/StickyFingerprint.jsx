@@ -384,6 +384,11 @@ function deriveBars(step, prevStep, subStep) {
       if (s >= 1 && GENERALIZED_IDS.includes(bar.id)) {
         return {
           ...base,
+          // glow (any truthy value, not ACCENT) drives isActive below,
+          // which shows the dashed treatment right away — otherwise it
+          // only appeared on hover, and the step read as static until you
+          // found a ridge to point at.
+          glow: true,
           isGeneralized: true,
           rangeMin: Math.max(5, bar.baseWidth - 20),
           rangeMax: Math.min(97, bar.baseWidth + 20),
@@ -393,6 +398,9 @@ function deriveBars(step, prevStep, subStep) {
         return {
           ...base,
           color: IDENTIFIER_GRAY,
+          // See the generalization branch above: shows the dashed/jitter
+          // state immediately instead of only on hover.
+          glow: true,
           isNoised: true,
           // Deterministic per-field offset so several noised ridges don't
           // all tremor in lockstep.

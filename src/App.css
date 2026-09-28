@@ -1073,18 +1073,18 @@ body {
      sliding around in space. steps(1) so it hops between offsets rather
      than crawling smoothly. */
   0%, 100% { stroke-dashoffset: 0; }
-  10% { stroke-dashoffset: 6; }
-  20% { stroke-dashoffset: -4; }
-  30% { stroke-dashoffset: 9; }
-  40% { stroke-dashoffset: -7; }
-  50% { stroke-dashoffset: 3; }
-  60% { stroke-dashoffset: -9; }
-  70% { stroke-dashoffset: 5; }
-  80% { stroke-dashoffset: -3; }
-  90% { stroke-dashoffset: 8; }
+  10% { stroke-dashoffset: 2.5; }
+  20% { stroke-dashoffset: -1.5; }
+  30% { stroke-dashoffset: 3.5; }
+  40% { stroke-dashoffset: -3; }
+  50% { stroke-dashoffset: 1; }
+  60% { stroke-dashoffset: -3.5; }
+  70% { stroke-dashoffset: 2; }
+  80% { stroke-dashoffset: -1; }
+  90% { stroke-dashoffset: 3; }
 }
 .ridge-noised .ridge-dashed {
-  animation: ridge-noise-jitter 700ms steps(1, end) infinite;
+  animation: ridge-noise-jitter 1100ms steps(1, end) infinite;
   animation-delay: calc(var(--noise-seed, 0) * -180ms);
 }
 
