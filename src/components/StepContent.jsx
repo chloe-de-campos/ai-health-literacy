@@ -20,6 +20,24 @@ function QuestionHint({ hint }) {
   );
 }
 
+// The question reads as the reader's own line of dialogue: an open rule with
+// a speech-bubble tail, a gap, and a dot, instead of a boxed callout.
+function CoordinatorQuestion({ question, hint }) {
+  return (
+    <div className="step-question">
+      <svg className="step-question__tail" width="31" height="22" viewBox="0 0 31 22" aria-hidden="true">
+        <path d="M31 0.75 H10 L1 21" stroke="var(--red)" strokeWidth="1.5" strokeLinejoin="round" fill="none" />
+      </svg>
+      <span className="step-question__line" aria-hidden="true" />
+      <span className="step-question__dot" aria-hidden="true" />
+      <span className="step-question__end" aria-hidden="true" />
+      <div className="step-question__label">Ask your coordinator</div>
+      <p className="step-question__text">{parseBody(question)}</p>
+      {hint && <QuestionHint hint={hint} />}
+    </div>
+  );
+}
+
 function GlossaryTerm({ term, definition }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
@@ -120,10 +138,7 @@ export default function StepContent({ step, subStep, techniqueOnly = false, intr
           <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
           <p className="step-body step-body--intro">{parseBody(step.intro)}</p>
           {step.question && (
-            <div className="step-question">
-              <div className="step-question__label">Ask your coordinator</div>
-              <p className="step-question__text">{parseBody(step.question)}</p>
-            </div>
+            <CoordinatorQuestion question={step.question} />
           )}
         </div>
       );
@@ -164,11 +179,7 @@ export default function StepContent({ step, subStep, techniqueOnly = false, intr
           </p>
         </div>
         {step.question && (
-          <div className="step-question">
-            <div className="step-question__label">Ask your coordinator</div>
-            <p className="step-question__text">{parseBody(step.question)}</p>
-            {step.questionHint && <QuestionHint hint={step.questionHint} />}
-          </div>
+          <CoordinatorQuestion question={step.question} hint={step.questionHint} />
         )}
       </div>
     );
@@ -180,11 +191,7 @@ export default function StepContent({ step, subStep, techniqueOnly = false, intr
       <h2 className="step-heading fly-in">{renderHeading(step.heading)}</h2>
       {renderParagraphs(step.body, 'step-body')}
       {!hideQuestion && step.question && (
-        <div className="step-question">
-          <div className="step-question__label">Ask your coordinator</div>
-          <p className="step-question__text">{parseBody(step.question)}</p>
-          {step.questionHint && <QuestionHint hint={step.questionHint} />}
-        </div>
+        <CoordinatorQuestion question={step.question} hint={step.questionHint} />
       )}
     </div>
   );

@@ -41,8 +41,12 @@ const RIDGE_CY = RIDGE_LEG_BOTTOM - (RIDGE_LEG_BOTTOM - RIDGE_MAX_R) * 0.62;
 function ridgePoint(r, thetaDeg) {
   return sharedRidgePoint(RIDGE_CX, RIDGE_CY, r, thetaDeg);
 }
+// Legs run on well past the bottom of the viewBox (the SVG is overflow:
+// visible) so, docked, they reach the bottom of the screen with the arcs
+// left exactly where they were; .sticky-panel clips them at its bottom edge.
+const RIDGE_LEG_EXTENSION = 320;
 function ridgePathD(r, shape) {
-  return sharedRidgePathD(RIDGE_CX, RIDGE_CY, RIDGE_LEG_BOTTOM, r, shape);
+  return sharedRidgePathD(RIDGE_CX, RIDGE_CY, RIDGE_LEG_BOTTOM + RIDGE_LEG_EXTENSION, r, shape);
 }
 
 function ridgeGeometry(id) {
@@ -62,7 +66,16 @@ function ridgeGeometry(id) {
 // distinguishing data," deliberately not a uniform repeating pattern.
 const IRREGULAR_DASH = '3 11 6 2 9 4 12 3 5 10 2 7';
 
-function RidgeItem({ bar, onBarSelect }) {
+// On-load trace: each ring starts this long after the one outside it.
+const LOAD_DRAW_STAGGER_MS = 90;
+// Last ring's delay plus the 900ms ridge-draw keyframe, with a little slack.
+const LOAD_DRAW_TOTAL_MS = (RIDGE_ORDER.length - 1) * LOAD_DRAW_STAGGER_MS + 900 + 100;
+
+function RidgeItem({ bar, onBarSelect, loadDraw = false }) {
+  // Pointer hover — a second, independent trigger for the solid → dashed
+  // dissolve that isActive drives from scroll. Mouse only, so a tap on
+  // touch doesn't leave a ridge stuck dashed.
+  const [hovered, setHovered] = useState(false);
   const [open, setOpen] = useState(false);
   const [anchorRect, setAnchorRect] = useState(null);
   const closeTimer = useRef(null);
@@ -74,7 +87,10 @@ function RidgeItem({ bar, onBarSelect }) {
   // same position. Never rendered in red; red stays a sparing accent.
   const isActive = !!bar.glow && bar.visible;
   const showAccentDot = isActive && bar.color === ACCENT;
-  const keyframeActive = bar.isEntering || bar.isExiting || bar.isDrawing;
+  const dashed = isActive || hovered;
+  // loadDraw: the one-time on-load trace (outer ring first), reusing the
+  // same stroke-draw keyframe the step transitions use.
+  const keyframeActive = bar.isEntering || bar.isExiting || bar.isDrawing || loadDraw;
 
   // Hover-driven, not click-driven: the popover appears as soon as the
   // pointer enters the ridge's hit target and disappears as soon as it
@@ -111,11 +127,17 @@ function RidgeItem({ bar, onBarSelect }) {
   if (keyframeActive) classes.push('ridge-draw');
   if (bar.isSuppressedGhost) classes.push('ridge-suppressed');
 
+  const drawDelay = loadDraw
+    ? Math.max(0, RIDGE_ORDER.indexOf(bar.id)) * LOAD_DRAW_STAGGER_MS
+    : (bar.enterDelay ?? bar.scanDelay ?? 0);
+
   return (
     <g
       className={classes.join(' ')}
       data-bar-id={bar.id}
-      style={{ '--ridge-delay': `${bar.enterDelay ?? bar.scanDelay ?? 0}ms`, opacity: bar.isSuppressedGhost ? 0.3 : (bar.opacity ?? 1) }}
+      style={{ '--ridge-delay': `${drawDelay}ms`, opacity: bar.isSuppressedGhost ? 0.3 : (bar.opacity ?? 1) }}
+      onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}
+      onPointerLeave={() => setHovered(false)}
     >
       {/* Wide invisible hit target for hover/click/tap */}
       {canOpen && (
@@ -129,10 +151,12 @@ function RidgeItem({ bar, onBarSelect }) {
         fill="none"
         stroke="var(--ink)"
         strokeWidth={strokeWidth}
-        strokeLinecap="round"
+        // Butt caps during the load trace: a round cap on the not-yet-drawn
+        // (zero-length) dash would show as a stray dot before each ring starts.
+        strokeLinecap={loadDraw ? 'butt' : 'round'}
         pathLength={keyframeActive ? 1 : undefined}
         style={{
-          opacity: isActive ? 0 : 1,
+          opacity: dashed ? 0 : 1,
           strokeDasharray: bar.isSuppressedGhost ? '2 4' : (keyframeActive ? 1 : 'none'),
           strokeDashoffset: keyframeActive ? 1 : 0,
         }}
@@ -145,7 +169,7 @@ function RidgeItem({ bar, onBarSelect }) {
         strokeWidth={strokeWidth}
         strokeLinecap="round"
         strokeDasharray={IRREGULAR_DASH}
-        style={{ opacity: isActive ? 1 : 0 }}
+        style={{ opacity: dashed ? 1 : 0 }}
       />
       {showAccentDot && (
         <circle className="ridge-accent-dot" cx={apex.x} cy={apex.y} r={4.5} fill="var(--red)" />
@@ -165,7 +189,7 @@ function RidgeItem({ bar, onBarSelect }) {
   );
 }
 
-function FingerprintRidgeField({ bars, stepIndex, onBarSelect }) {
+function FingerprintRidgeField({ bars, stepIndex, onBarSelect, loadDraw }) {
   return (
     <svg
       className="fingerprint-ridges"
@@ -174,8 +198,74 @@ function FingerprintRidgeField({ bars, stepIndex, onBarSelect }) {
       role="img"
       aria-label="Fingerprint-style visualization of your health record fields"
     >
-      {bars.map(bar => <RidgeItem key={bar.id} bar={bar} onBarSelect={onBarSelect} />)}
+      {bars.map(bar => <RidgeItem key={bar.id} bar={bar} onBarSelect={onBarSelect} loadDraw={loadDraw} />)}
     </svg>
+  );
+}
+
+// ─── Step 1 field labels ──────────────────────────────────────────────────────
+// Names each base field at the foot of its ridge, rotated to run up the gap
+// beside its leg. HTML rather than SVG text so the labels stay a fixed 11px
+// regardless of how the print is scaled, and so they live outside the
+// FingerprintCore that remounts on every step change — that remount would
+// otherwise cut their fade-out short. Outermost ridge first (--i drives the
+// CSS stagger).
+
+// Half the spacing between neighbouring rings, in viewBox units: centers a
+// label in the channel between a leg and the next ring's leg.
+const LABEL_GAP_OFFSET = (RIDGE_MAX_R - RIDGE_MIN_R) / (RIDGE_ORDER.length - 1) / 2;
+const LABEL_FOOT_LIFT = 4;
+
+const FIELD_LABELS = [...BASE_BARS]
+  .sort((a, b) => RIDGE_ORDER.indexOf(a.id) - RIDGE_ORDER.indexOf(b.id))
+  .map(bar => {
+    const idx = Math.max(0, RIDGE_ORDER.indexOf(bar.id));
+    const { r } = ridgeGeometry(bar.id);
+    // 'right' partials have no left leg, so label their right foot instead.
+    const onRight = RIDGE_VARIANTS[idx % RIDGE_VARIANTS.length].variant === 'right';
+    const x = onRight ? RIDGE_CX + r - LABEL_GAP_OFFSET : RIDGE_CX - r + LABEL_GAP_OFFSET;
+    return { id: bar.id, label: bar.label, x, y: RIDGE_LEG_BOTTOM - LABEL_FOOT_LIFT };
+  });
+
+function RidgeFieldLabels({ visible, stageRef }) {
+  const layerRef = useRef(null);
+  const [box, setBox] = useState(null);
+
+  // Mirror the SVG's viewBox → pixel mapping (preserveAspectRatio
+  // "xMidYMax meet"). clientWidth/Height are layout sizes, so the hero
+  // transform on .fp-stage doesn't skew the measurement.
+  useLayoutEffect(() => {
+    const layer = layerRef.current;
+    if (!layer) return;
+    const measure = () => {
+      const svg = stageRef.current?.querySelector('.fingerprint-ridges');
+      if (!svg) return;
+      const w = svg.clientWidth, h = svg.clientHeight;
+      const k = Math.min(w / RIDGE_VIEW_W, h / RIDGE_VIEW_H);
+      setBox({ k, ox: (w - RIDGE_VIEW_W * k) / 2, oy: h - RIDGE_VIEW_H * k });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(layer);
+    return () => ro.disconnect();
+  }, [stageRef]);
+
+  return (
+    <div
+      ref={layerRef}
+      className={`ridge-field-labels${visible ? ' ridge-field-labels--on' : ''}`}
+      aria-hidden="true"
+    >
+      {box && FIELD_LABELS.map((f, i) => (
+        <span
+          key={f.id}
+          className="ridge-field-label"
+          style={{ left: box.ox + f.x * box.k, top: box.oy + f.y * box.k, '--i': i }}
+        >
+          {f.label}
+        </span>
+      ))}
+    </div>
   );
 }
 
@@ -601,11 +691,11 @@ function FingerprintBar({ bar, stepIndex, vertical = false, onBarSelect }) {
   );
 }
 
-function FingerprintCore({ bars, stepIndex, dimmed = false, vertical = false, onBarSelect }) {
+function FingerprintCore({ bars, stepIndex, dimmed = false, vertical = false, onBarSelect, loadDraw = false }) {
   if (!vertical) {
     return (
       <div className="fingerprint-core fingerprint-core--ridges" style={{ opacity: dimmed ? 0.22 : 1, position: 'relative' }}>
-        <FingerprintRidgeField bars={bars} stepIndex={stepIndex} onBarSelect={onBarSelect} />
+        <FingerprintRidgeField bars={bars} stepIndex={stepIndex} onBarSelect={onBarSelect} loadDraw={loadDraw} />
       </div>
     );
   }
@@ -636,7 +726,8 @@ function getCaption(step, subStep) {
     return sub[subStep ?? 0] ?? sub[0];
   }
   const captions = {
-    0: 'These bars represent your health record. Each one is a data field.',
+    // Step 0 has no caption: the per-ridge field labels (RidgeFieldLabels)
+    // name each field directly once the print docks.
     1: "Your record only gets involved in the trial after you consent to join.",
     2: 'Once you\'re enrolled, new data streams are recorded for your record.',
     3: 'These red fields are the easiest to trace back to you.',
@@ -654,7 +745,7 @@ function getCaption(step, subStep) {
 const ANIM_MS = 520;
 const EXIT_MS = 380;
 
-export default function StickyFingerprint({ step, subStep, vertical = false, onBarSelect }) {
+export default function StickyFingerprint({ step, subStep, vertical = false, onBarSelect, showFieldLabels = false }) {
   const prevStepRef = useRef(step);
   const prevStep = prevStepRef.current;
   useEffect(() => { prevStepRef.current = step; });
@@ -665,6 +756,18 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
   useEffect(() => {
     if (step === 0) setScanKey(k => k + 1);
   }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // One-time on-load trace of the ridges, outer ring first. Skipped for
+  // reduced motion; switched off once the last ring has finished drawing so
+  // the step transitions own the draw keyframe from then on.
+  const [loadDraw, setLoadDraw] = useState(
+    () => !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+  useEffect(() => {
+    if (!loadDraw) return;
+    const t = setTimeout(() => setLoadDraw(false), LOAD_DRAW_TOTAL_MS);
+    return () => clearTimeout(t);
+  }, [loadDraw]);
 
   // Grid shown at pool (5) and pattern-finding (6) steps
   const showGrid = step === 5 || step === 6;
@@ -742,7 +845,15 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
 
 
   return (
-    <div ref={wrapperRef} className="fingerprint-wrapper">
+    <div ref={wrapperRef} className={`fingerprint-wrapper${displayMode === 'grid' || displayMode === 'grid-exit' ? ' fingerprint-wrapper--grid' : ''}`}>
+      {/* Caption + hint sit above the print (the extended ridge legs run on
+          below): just over the outer arc, or over the crowd grid when it's up. */}
+      <div className="fingerprint-meta">
+        <p className="fingerprint-caption" aria-live="polite">
+          {getCaption(step, subStep) && <span className="fingerprint-caption__text">{getCaption(step, subStep)}</span>}
+        </p>
+        <p className="fingerprint-hint" />
+      </div>
       <div className="fp-stage">
         {showSingle && (
           <div
@@ -751,8 +862,9 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
             style={{ ...(displayMode === 'to-single' ? growStyle : {}), zIndex: displayMode === 'to-single' ? 2 : 1 }}
           >
             <div className={isLocked ? 'fp-bars-locked' : ''} style={vertical && !showGrid ? { height: '100%' } : {}}>
-              <FingerprintCore key={step === 0 ? `scan-${scanKey}` : 'core'} bars={bars} stepIndex={step} vertical={vertical && !showGrid} onBarSelect={onBarSelect} />
+              <FingerprintCore key={step === 0 ? `scan-${scanKey}` : 'core'} bars={bars} stepIndex={step} vertical={vertical && !showGrid} onBarSelect={onBarSelect} loadDraw={loadDraw && step === 0} />
             </div>
+            {!vertical && <RidgeFieldLabels visible={showFieldLabels} stageRef={singleElRef} />}
           </div>
         )}
         {showGridEl && (
@@ -769,8 +881,6 @@ export default function StickyFingerprint({ step, subStep, vertical = false, onB
         )}
       </div>
 
-      <p className="fingerprint-caption" aria-live="polite">{getCaption(step, subStep)}</p>
-      <p className="fingerprint-hint" />
 
 
      

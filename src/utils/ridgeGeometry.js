@@ -39,21 +39,26 @@ export function ridgePathD(cx, cy, legBottom, r, { variant, thetaStart, thetaEnd
   }
 }
 
-// Deterministic, organic mix of ring shapes — full loops, left/right
-// partials, and floating stubs, rather than every ring being a uniform
-// symmetric bracket. Indexed by position in a field/ring order.
+// Every ring: left leg only, curling up over the top and trailing off at a
+// different point down the right side — no matching right leg — so it reads
+// as a fingerprint loop rather than a symmetric arch. The trail-off points
+// are deliberately irregular (a fixed shuffle, not Math.random, so the
+// print is the same on every load and in every step) so neighbouring
+// ridges end at visibly different lengths. thetaEnd is where the arc stops,
+// in degrees: ~0 runs all the way round to the right side, ~150 stops just
+// past the top. Indexed by position in a field/ring order.
 export const RIDGE_VARIANTS = [
-  { variant: 'full' },
-  { variant: 'full' },
-  { variant: 'left', thetaEnd: 100 },
-  { variant: 'full' },
-  { variant: 'right', thetaStart: 60 },
-  { variant: 'full' },
-  { variant: 'stub', thetaStart: 130, thetaEnd: 50 },
-  { variant: 'left', thetaEnd: 140 },
-  { variant: 'full' },
-  { variant: 'right', thetaStart: 40 },
-  { variant: 'full' },
+  { variant: 'left', thetaEnd: 18 },
+  { variant: 'left', thetaEnd: 96 },
+  { variant: 'left', thetaEnd: 8 },
+  { variant: 'left', thetaEnd: 58 },
+  { variant: 'left', thetaEnd: 132 },
+  { variant: 'left', thetaEnd: 30 },
+  { variant: 'left', thetaEnd: 112 },
+  { variant: 'left', thetaEnd: 44 },
+  { variant: 'left', thetaEnd: 146 },
+  { variant: 'left', thetaEnd: 70 },
+  { variant: 'left', thetaEnd: 24 },
 ];
 
 // Small deterministic hash — used to pick a per-cell variant offset so each

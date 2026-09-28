@@ -1,5 +1,5 @@
 /* ─── Fonts ────────────────────────────────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;500&family=Archivo:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 
 /* ─── Palette tokens ─────────────────────────────────────────────────────────
    Cream/newsprint ground, near-black ink, one bold red accent used sparingly:
@@ -15,6 +15,20 @@
   --font-display: 'Archivo', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
   --font-body: 'Inter', -apple-system, sans-serif;
+  /* Cover only. The *Fallback faces (index.html) are metric-matched local
+     fonts, so the headline and intro don't reflow when the web fonts swap in. */
+  --font-cover-display:  'Atkinson Hyperlegible Next', 'Atkinson Next Fallback', Arial, sans-serif;
+  --font-cover-body: 'Atkinson Hyperlegible Next', 'Atkinson Next Fallback', Arial, sans-serif;
+  --font-label: 'Atkinson Hyperlegible Mono', ui-monospace, monospace;
+}
+
+/* Fades the rule under the print in as it docks. Registered and
+   non-inherited so tweening it restyles only the sticky panel, not every
+   element under it. */
+@property --cover-lines {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
 }
 
 /* ─── App-level dark mode (Step 4: Safeguards) ──────────────────────────────── */
@@ -38,8 +52,25 @@ body:has(.app--dark) {
 
 html {
   scroll-behavior: smooth;
-  font-size: 16px;
+  font-size: 14px;
   scroll-snap-type: y proximity;
+}
+
+/* Two independent reasons snapping gets suspended — a data attribute each,
+   not a shared class, so App.js (the cover→Step 1 pin) and
+   ScrollyContainer.jsx (a step taller than the viewport) can't clobber
+   each other's toggle when they happen to update near the same time.
+   [data-suspend-cover]: for as long as the cover isn't fully docked.
+   Without this, scroll-snap-type: y proximity fights GSAP's ScrollTrigger
+   pin/unpin right at the hand-off point — confirmed by disabling snap
+   entirely, which made the hand-off scroll smoothly; with it on, a wheel
+   scroll can freeze dead at that exact scroll position and go no further.
+   [data-suspend-tall]: 'proximity' can still pull the page toward the
+   next step's snap point (or back to the current one's) before the reader
+   reaches a tall step's overflow. */
+html[data-suspend-cover],
+html[data-suspend-tall] {
+  scroll-snap-type: none;
 }
 
 
@@ -48,7 +79,6 @@ body {
   background: var(--cream);
   color: var(--ink);
   line-height: 1.65;
-  border-top: 2px solid var(--ink);
   overflow-x: hidden;
 }
 
@@ -77,18 +107,172 @@ body {
   overflow: clip; /* see .app comment above — same implicit-auto trap */
 }
 
-/* ─── Intro block ────────────────────────────────────────────────────────────
-   The title/subtitle now live at the top of the narrative column itself
-   (not a separate full-width header row), so the fingerprint in the sticky
-   panel beside it is visible from the very first screen — on the left the
-   whole time, including the intro, rather than a separate static print on
-   the right that only appears before the real one takes over. */
-.intro-block {
-  min-height: 100vh;
+/* ─── Cover ──────────────────────────────────────────────────────────────────
+   Full-width first screen, layered over the top of the scrolly layout. The
+   fingerprint isn't drawn here: the one sticky-panel SVG is transformed
+   (App.js) to sit oversized and cropped bottom-left underneath this text,
+   then scrubs back into its docked slot as the pinned cover plays out. */
+.cover {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;
+  z-index: 3; /* above the sticky panel's SVG */
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-bottom: 12vh;
+  align-items: center;
+  justify-content: flex-end;
+  /* Symmetric top/bottom padding so align-items: center actually centers
+     the text block — uneven padding here was skewing it upward. */
+  padding: 6vh clamp(40px, 4vw, 72px) 6vh 0; /* right: clear of the dot nav */
+  pointer-events: none; /* ridges underneath stay hoverable */
+}
+
+.cover__text {
+  /* Narrower and pinned to the right (not centered in the 60% column), so
+     it reads as text set against the right edge rather than mid-page. */
+  width: 56%;
+  min-width: 460px;
+  margin-left: auto;
+  pointer-events: auto;
+}
+
+.cover-title {
+  font-family: var(--font-cover-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  /* Also capped by height, so headline + intro panel fit shorter laptops. */
+  font-size: clamp(2.6rem, min(7vw, 11vh), 6.4rem);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.cover-title em {
+  font-style: normal;
+  color: var(--red);
+}
+
+.cover-intro {
+  --bracket: 40px; /* size of the 45° corner cut; matches the SVG in App.js */
+  position: relative;
+  width: fit-content;
+  margin-top: 36px;
+  padding: 30px 40px 34px 34px;
+  isolation: isolate;
+}
+
+/* Aubergine fill that blocks the ridges behind the panel, cut at the
+   top-left corner where the bracket turns. On a layer of its own so the
+   clip doesn't also shave the rules and dots, which sit half outside it. */
+.cover-intro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--cream);
+  clip-path: polygon(var(--bracket) 0, 100% 0, 100% 100%, 0 100%, 0 var(--bracket));
+}
+
+/* L-shaped bracket along the top and left edges. */
+.cover-intro__bracket {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.cover-intro__bracket-rise {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+
+.cover-intro__bracket-rule {
+  position: absolute;
+  background: var(--red);
+}
+
+.cover-intro__bracket-rule--top {
+  top: 0;
+  left: calc(var(--bracket) - 0.5px);
+  right: 16px;
+  height: 1.5px;
+}
+
+.cover-intro__bracket-rule--left {
+  left: 0;
+  top: calc(var(--bracket) - 0.5px);
+  bottom: 16px;
+  width: 1.5px;
+}
+
+.cover-intro__bracket-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.cover-intro__bracket-dot--top { top: -4.25px; right: -4px; }
+.cover-intro__bracket-dot--left { left: -4.25px; bottom: -4px; }
+
+.cover-intro__label {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 14px;
+}
+
+.cover-intro__text {
+  max-width: 52ch;
+  font-family: var(--font-cover-body);
+  font-size: clamp(1.05rem, min(1.5vw, 2.35vh), 1.35rem);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+
+/* While the cover is up, the hero print bleeds to the viewport edge rather
+   than the centered stage edge (only differs above 1360px); .app still
+   clips it. Docked, the print sits inside the stage, so restoring the clip
+   is invisible. */
+.app--cover .stage-inner {
+  overflow: visible;
+}
+
+/* Step 1 is held flush with the viewport top during the pinned transition
+   (toggled from App.js), then scrolls away normally. */
+.scroll-step.scroll-step--held {
+  position: sticky;
+  bottom: 0;
+  /* Held flush at the top, it would otherwise count as "snapped" at every
+     point of the transition and yank the scrub back mid-scroll. */
+  scroll-snap-align: none;
+}
+
+/* Reduced motion: no pin or scale. Crossing the threshold is a plain 300ms
+   crossfade of cover text → Step 1 text (and the rule under the print). */
+.app--reduced .cover__text,
+.app--reduced .scroll-step[data-step="0"] .step-content-wrapper {
+  transition: opacity 300ms ease, visibility 300ms;
+}
+
+.app--reduced:not(.app--cover) .cover__text,
+.app--reduced.app--cover .scroll-step[data-step="0"] .step-content-wrapper {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.app--reduced .sticky-panel {
+  transition: --cover-lines 300ms ease;
+}
+
+.app--reduced.app--cover .sticky-panel {
+  --cover-lines: 0;
 }
 
 /* ─── Fly-in headings ────────────────────────────────────────────────────────
@@ -164,18 +348,24 @@ body {
 .sticky-panel {
   position: sticky;
   top: 0;
-  width: 48%;
+  width: 44%;
   flex-shrink: 0;
   height: 100vh;
   display: flex;
   align-items: center;
   padding: 0;
   margin-left: 0;
-  overflow: visible;
+  /* Sideways the print may bleed; downward, the extended ridge legs are
+     cut at the panel's bottom (= the viewport bottom while stuck) so they
+     never hang over the sources section once the panel is released. */
+  overflow-x: visible;
+  overflow-y: clip;
   z-index: 1;
 }
 
 .sticky-panel::after {
+  --cover-lines: inherit;
+  opacity: var(--cover-lines);
   content: '';
   position: absolute;
   left: 0;
@@ -191,7 +381,7 @@ body {
 
 /* Right narrative panel: narrower Swiss-grid column, pushed lower-right */
 .narrative-panel {
-  width: 54%;
+  width: 58%;
   min-width: 0;
   padding: 6vh 6vw 12vh 3.5vw;
   margin-left: 1.5%;
@@ -199,29 +389,32 @@ body {
   z-index: 2;
 }
 
-.narrative-panel::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  background: var(--ink-faint-2);
-}
-
 /* ─── Scroll Steps ──────────────────────────────────────────────────────────── */
 .scroll-step {
   min-height: 100vh;
   display: flex;
   align-items: center;
-  padding: 60px 0;
+  padding: 40px 0;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
 
+/* A step taller than the viewport (ScrollyContainer.jsx) opts out of
+   snapping, so a scroll gesture landing partway through it doesn't get
+   pulled back to its already-at top edge — the nearest snap point in
+   'proximity' mode — leaving the rest of it unreachable. */
+.scroll-step--tall {
+  scroll-snap-align: none;
+  scroll-snap-stop: normal;
+}
+
 /* ─── Step Content ──────────────────────────────────────────────────────────── */
 .step-content {
-  max-width: 560px;
+  /* Was a fixed 560px, which fell short of the room the narrative column
+     actually has, forcing paragraphs onto more lines (and several steps
+     taller than one screen) than the layout needed to. Now fills whatever
+     width the column gives it. */
+  max-width: 100%;
   padding-left: 44px;
 }
 
@@ -361,75 +554,94 @@ body {
   margin-bottom: 0;
 }
 
-/* ─── Ask Callout ───────────────────────────────────────────────────────────── */
+/* ─── Ask Callout ─────────────────────────────────────────────────────────────
+   An open rule with a speech tail at the left, a gap with a dot, and a short
+   end segment at the right. No box, no background. */
 .step-question {
-  margin-top: 32px;
-  padding: 20px 22px;
-  background: transparent;
-  border-radius: 0;
-  border: 1px solid var(--ink-faint-2);
-  border-left: 3px solid var(--red);
-  transition: background 500ms ease, border-color 500ms ease;
+  position: relative;
+  margin-top: 22px;
+  padding: 22px 0 0 34px;
 }
 
-.app--dark .step-question {
-  background: rgba(232, 226, 214, 0.04);
-  border-left-color: var(--red);
+.step-question__tail,
+.step-question__line,
+.step-question__dot,
+.step-question__end {
+  position: absolute;
+  pointer-events: none;
+}
+
+.step-question__tail {
+  top: 0;
+  left: 0;
+  overflow: visible;
+}
+
+.step-question__line,
+.step-question__end {
+  top: 0;
+  height: 1.5px;
+  background: var(--red);
+}
+
+.step-question__line {
+  left: 30px;
+  right: 44px;
+}
+
+.step-question__end {
+  right: 0;
+  width: 22px;
+}
+
+.step-question__dot {
+  top: -4px;
+  right: 30px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--red);
 }
 
 .step-question__label {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
+  font-family: 'Atkinson Hyperlegible Mono', var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--red);
-  margin-bottom: 9px;
-  transition: color 500ms ease;
-}
-
-.app--dark .step-question__label {
-  color: var(--red);
+  color: var(--ink-soft);
+  margin-bottom: 12px;
 }
 
 .step-question__text {
-  font-family: var(--font-mono);
-  font-size: 0.98rem;
-  font-weight: 600;
-  color: var(--red);
-  letter-spacing: 0.01em;
-  font-style: normal;
-  line-height: 1.5;
-  transition: color 500ms ease;
-}
-
-.app--dark .step-question__text {
+  font-family: 'Atkinson Hyperlegible Next', var(--font-body);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.45;
   color: var(--red);
 }
 
 .step-question__hint-wrapper {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(243, 239, 230, 0.18);
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(243, 239, 230, 0.16);
 }
 
 .step-question__hint-toggle {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   background: none;
   border: none;
   padding: 0;
-  font-family: var(--font-mono);
-  font-size: 0.72rem;
-  font-weight: 600;
+  font-family: 'Atkinson Hyperlegible Mono', var(--font-mono);
+  font-size: 13px;
   color: var(--ink-soft);
   cursor: pointer;
-  letter-spacing: 0.03em;
   transition: color 150ms ease;
 }
 
-.step-question__hint-toggle:hover { color: var(--ink-soft); }
+.step-question__hint-toggle:hover { color: var(--ink); }
 
 .step-question__hint {
   margin-top: 8px;
@@ -724,6 +936,44 @@ body {
   stroke-dasharray: 2 5 !important;
 }
 
+/* Step 1 field labels: one per ridge, at its foot, reading upward in the
+   channel beside the leg. Ticked in outermost-first once the print docks;
+   faded out together when the reader leaves Step 1. */
+.fp-stage__single {
+  position: relative;
+}
+
+.ridge-field-labels {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ridge-field-label {
+  position: absolute;
+  transform-origin: 0 0;
+  transform: rotate(-90deg) translateY(-50%);
+  font-family: var(--font-label);
+  font-size: 11px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  color: rgba(243, 239, 230, 0.7);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.ridge-field-labels--on .ridge-field-label {
+  opacity: 1;
+  transition-delay: calc(var(--i) * 60ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ridge-field-labels--on .ridge-field-label {
+    transition-delay: 0ms;
+  }
+}
+
 .fingerprint-core--vertical {
   display: flex !important;
   flex-direction: row !important;
@@ -913,12 +1163,79 @@ body {
 }
 
 .fingerprint-hint::before {
-  content: 'Hover a ridge to learn more';
+  content: 'Hover a ridge for details';
+}
+
+/* Caption and hint sit on snug background-colored plates, so anything
+   passing behind them (ridges, grid) doesn't run through the words. */
+.sticky-panel .fingerprint-caption__text,
+.sticky-panel .fingerprint-hint::before {
+  background: var(--cream);
+  padding: 2px 8px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+
+/* Caption + hint above the print (.fingerprint-meta). Out of flow, so they
+   don't push the print down: the wrapper's bottom padding stands in for the
+   space they used to take below it, keeping the print exactly where it was.
+   Pinned just above the outer ridge's arc using the SVG's own sizing — the
+   SVG is the wrapper's full width, max-height 78vh, viewBox 520×500
+   ("meet"), so its scale is min(width/520, 78vh/500) and the outer arc tops
+   out 97.3 units below its top (StickyFingerprint: RIDGE_CY - RIDGE_MAX_R).
+   While the crowd grid is up (Steps 6–7) it sits above the grid instead.
+   The caption is a fixed two-line slot with its text on the bottom edge,
+   so one- vs two-line captions keep the same baseline. */
+.sticky-panel .fingerprint-wrapper {
+  position: relative;
+  container-type: inline-size;
+  padding-bottom: 82px; /* the old below-print caption + hint */
+}
+
+.sticky-panel .fingerprint-meta {
+  --cap-h: calc(2 * 0.88rem * 1.45 + 4px); /* two caption lines + plate padding */
+  --hint-h: 18px;
+  --meta-h: calc(var(--cap-h) + 4px + var(--hint-h));
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(8px + 97.3 * min(100cqw / 520, 78vh / 500) - var(--meta-h) - 16px);
+  z-index: 3; /* above .fp-stage__single (z-index 1–2) */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  transition: top 350ms ease;
+}
+
+.sticky-panel .fingerprint-wrapper--grid .fingerprint-meta {
+  top: calc(8px - var(--meta-h) - 14px);
+}
+
+.sticky-panel .fingerprint-caption {
+  height: var(--cap-h);
+  margin: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sticky-panel .fingerprint-hint {
+  height: var(--hint-h);
+  margin: 4px 0 0;
+}
+
+/* Only once the print has docked — not on the cover. */
+.fingerprint-hint {
+  transition: opacity 300ms ease;
+}
+.app--cover .fingerprint-hint {
+  opacity: 0;
 }
 
 @media (hover: none) {
   .fingerprint-hint::before {
-    content: 'Tap a ridge to learn more';
+    content: 'Tap a ridge for details';
   }
 }
 
@@ -1052,7 +1369,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0;
-  max-width: 520px;
+  max-width: 100%;
 }
 
 /* ─── Technique Selector (step 4) ────────────────────────────────────────────── */
@@ -1445,11 +1762,6 @@ body {
 
   .step-body {
     font-size: 0.9rem;
-  }
-
-  .step-question__text {
-    font-size: 0.86rem;
-    line-height: 1.6;
   }
 
   .step-number {

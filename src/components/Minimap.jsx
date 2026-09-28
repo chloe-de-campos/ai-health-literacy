@@ -1,5 +1,6 @@
 import React from 'react';
 import STEPS from '../data/steps';
+import scrollToStep from '../utils/scrollToStep';
 
 // Precompute the first flat .scroll-step index for each step in STEPS.
 // Step 4 has 4 sub-steps, so it occupies 4 scroll positions instead of 1.
@@ -14,8 +15,7 @@ const STEP_MAP = (() => {
 })();
 
 function scrollToFlatIndex(idx) {
-  document.querySelectorAll('.scroll-step')[idx]
-    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollToStep(document.querySelectorAll('.scroll-step')[idx]);
 }
 
 export default function Minimap({ activeStep, activeSubStep }) {
