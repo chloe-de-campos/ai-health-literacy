@@ -6,9 +6,15 @@
 // FingerprintGrid.jsx, which import these same constants so every view
 // of the fingerprint stays in sync.
 
-export const INK = '#161311';
-export const IDENTIFIER_GRAY = '#5c554c';   // shared tone, direct identifiers at rest (name/dob/ssn)
-export const ACCENT = '#C1121F';             // reserved for step-driven state only
+// These are drawn ON the aubergine ground (--cream: #2A1A24), so they track
+// the CSS palette tokens: INK = --ink, ACCENT = --red. They were left on the
+// pre-redesign light-theme values (near-black ink, a true red accent), which
+// desktop ridges never revealed because they hardcode stroke="var(--ink)" —
+// but the mobile bars and the crowd grid read these directly, so the bars
+// rendered near-black on near-black and the grid flashed the old red.
+export const INK = '#F3EFE6';
+export const IDENTIFIER_GRAY = '#8a8075';   // shared tone, direct identifiers at rest (name/dob/ssn)
+export const ACCENT = '#E8C872';             // reserved for step-driven state only
 
 export const BASE_BARS = [
   {

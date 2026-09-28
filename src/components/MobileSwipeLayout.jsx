@@ -240,7 +240,10 @@ export default function MobileSwipeLayout({ onStepChange }) {
                   <div className="step-content">
                     <div className="step-number">0{slide.stepData.step + 1}</div>
                     <h2 className="step-heading">{slide.stepData.heading}</h2>
-                    <div className="step-technique" style={{ marginTop: 0 }}>
+                    {/* StepContent's techniqueOnly branch renders its own
+                        .step-technique (border-left + padding), so wrapping
+                        it in another one drew the left rule twice. */}
+                    <div className="mobile-technique-wrap">
                       <StepContent step={slide.stepData} subStep={slide.subStep} techniqueOnly />
                     </div>
                   </div>

@@ -1047,7 +1047,7 @@ body {
 }
 
 .ridge-accent-dot {
-  filter: drop-shadow(0 0 4px rgba(193, 18, 31, 0.6));
+  filter: drop-shadow(0 0 4px rgba(232, 200, 114, 0.6));
 }
 
 /* Suppression: the field is gone, not a faded/dashed ghost of itself — a
@@ -1274,8 +1274,8 @@ body {
 
 .mini-fp--user {
   background: #1d1712;
-  border-color: rgba(193,18,31,0.33);
-  outline: 1.5px solid rgba(193,18,31,0.13);
+  border-color: rgba(232, 200, 114,0.33);
+  outline: 1.5px solid rgba(232, 200, 114,0.13);
 }
 
 .mini-fp-print {
@@ -1708,9 +1708,9 @@ body {
 }
 
 .reid-mini-cell--matched {
-  background: rgba(193, 18, 31, 0.14);
-  border-color: rgba(193,18,31,0.53);
-  box-shadow: 0 0 6px 2px rgba(193,18,31,0.20);
+  background: rgba(232, 200, 114, 0.14);
+  border-color: rgba(232, 200, 114,0.53);
+  box-shadow: 0 0 6px 2px rgba(232, 200, 114,0.20);
 }
 
 /* Right panel: voter roll table */
@@ -1733,8 +1733,8 @@ body {
 }
 
 .reid-voter-row--match {
-  background: rgba(193, 18, 31, 0.14);
-  border-color: rgba(193,18,31,0.27);
+  background: rgba(232, 200, 114, 0.14);
+  border-color: rgba(232, 200, 114,0.27);
 }
 
 .reid-voter-name {
@@ -1762,7 +1762,7 @@ body {
 
 .reid-voter-field--glow {
   color: var(--red);
-  text-shadow: 0 0 6px rgba(193,18,31,0.53);
+  text-shadow: 0 0 6px rgba(232, 200, 114,0.53);
 }
 
 /* 4th field: condition from commercial database */
@@ -1778,8 +1778,8 @@ body {
 }
 
 .reid-extra-field--glow {
-  background: rgba(193, 18, 31, 0.14);
-  border-color: rgba(193,18,31,0.27);
+  background: rgba(232, 200, 114, 0.14);
+  border-color: rgba(232, 200, 114,0.27);
 }
 
 .reid-extra-source {
@@ -1876,6 +1876,18 @@ body {
 
 /* ─── Mobile: Stack layout (desktop fallback, not used when MobileSwipeLayout active) ── */
 @media (max-width: 768px) {
+  /* .fly-in starts at opacity 0 and is revealed by an IntersectionObserver
+     in App.js — which returns early on mobile, where MobileSwipeLayout is
+     rendered instead. Every step heading that goes through StepContent
+     carries .fly-in, so they were all permanently invisible here (the
+     Safeguards slides were the exception only because they hardcode their
+     own heading without the class). */
+  .fly-in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
   .scrolly-layout {
     flex-direction: column;
     gap: 0;
@@ -2107,6 +2119,12 @@ body {
 .mobile-slide--active .mobile-slide-inner {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Technique slides: the inner .step-technique supplies the rule and
+   padding; this only removes its top margin in the slide context. */
+.mobile-technique-wrap > .step-technique {
+  margin-top: 0;
 }
 
 /* ── Intro slide ── */
