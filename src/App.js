@@ -209,12 +209,19 @@ export default function App() {
             // leaves a stacking/containing-block side effect on Steps 2–10.
             gsap.set([stage, step0Content], { clearProps: 'transform' });
             setDocked(true);
-            // Let Step 1 become a normal scroll-snap point again. Held (and
-            // snap-align: none) only while it's mid-transition — otherwise a
-            // fast scroll's momentum snaps straight through the last sliver
-            // of the scrub to the next step, so the reader never rests on
-            // Step 1 long enough to see the field labels land.
-            step0.classList.remove('scroll-step--held');
+            // Tried: removing 'scroll-step--held' here (letting Step 1
+            // become a normal scroll-snap point again, so a fast scroll's
+            // momentum doesn't skip past the fully-docked moment before the
+            // reader sees the field labels land). Reverted — changing
+            // scroll-snap-align on/near Step 1 at exactly this scroll
+            // position, by any means (this class, a different class, even
+            // an ancestor's class with a descendant-selector rule),
+            // reliably froze scrolling dead right here — confirmed with
+            // scroll-snap-type: none active the whole time, so it isn't
+            // GSAP's pin/unpin either; it reproduces with a bare
+            // window.scrollBy() with no GSAP or wheel input involved at
+            // all. A frozen page is worse than labels landing a little
+            // late, so Step 1 just stays non-snapping permanently.
           },
           onEnterBack: () => {
             setDocked(false);
