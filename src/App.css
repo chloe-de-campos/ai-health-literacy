@@ -1068,21 +1068,20 @@ body {
    wrong" rather than "this field has noise," per hands-on testing). The
    hover-revealed dashed line trembles instead of just holding still. */
 @keyframes ridge-noise-jitter {
-  /* Values are in the ridge SVG's own coordinate space (viewBox 520×500),
-     not screen pixels — the whole SVG is then scaled down to fit, so what
-     looked like a 0.6px jitter on screen was well under a pixel and
-     invisible. These are sized against ridge stroke widths (1.3–3.4 units)
-     so the tremor reads clearly at any screen size. */
-  0%, 100% { transform: translate(0, 0); }
-  10% { transform: translate(2.6px, -1.8px); }
-  20% { transform: translate(-2.2px, 2.4px); }
-  30% { transform: translate(1.8px, 1.4px); }
-  40% { transform: translate(-2.8px, -1.2px); }
-  50% { transform: translate(1.4px, 2.6px); }
-  60% { transform: translate(-1.8px, -2.2px); }
-  70% { transform: translate(2.2px, 1.0px); }
-  80% { transform: translate(-1.4px, 1.8px); }
-  90% { transform: translate(1.0px, -2.6px); }
+  /* Shifts the dash pattern along the (otherwise fixed) path, rather than
+     moving the line itself — dash-to-dash flicker, not the whole ridge
+     sliding around in space. steps(1) so it hops between offsets rather
+     than crawling smoothly. */
+  0%, 100% { stroke-dashoffset: 0; }
+  10% { stroke-dashoffset: 6; }
+  20% { stroke-dashoffset: -4; }
+  30% { stroke-dashoffset: 9; }
+  40% { stroke-dashoffset: -7; }
+  50% { stroke-dashoffset: 3; }
+  60% { stroke-dashoffset: -9; }
+  70% { stroke-dashoffset: 5; }
+  80% { stroke-dashoffset: -3; }
+  90% { stroke-dashoffset: 8; }
 }
 .ridge-noised .ridge-dashed {
   animation: ridge-noise-jitter 700ms steps(1, end) infinite;
