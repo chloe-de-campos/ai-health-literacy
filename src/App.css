@@ -1050,8 +1050,42 @@ body {
   filter: drop-shadow(0 0 4px rgba(193, 18, 31, 0.6));
 }
 
-.ridge-suppressed .ridge-solid {
-  stroke-dasharray: 2 5 !important;
+/* Suppression: the field is gone, not a faded/dashed ghost of itself — a
+   plain opacity fade (via bar.opacity in StickyFingerprint.jsx) handles it. */
+.ridge {
+  transition: opacity 500ms ease;
+}
+
+/* Generalization: same solid → dashed hover-dissolve every ridge has, just
+   a longer, looser dash rhythm — "blurred into a range" rather than
+   "actively being discussed" (the default IRREGULAR_DASH). */
+.ridge-generalized .ridge-dashed {
+  stroke-dasharray: 13 19 17 9 23 10;
+}
+
+/* Noise: a continuous, subtle stutter-step tremor — the exact value has
+   been perturbed. steps(1) rather than easing, so it reads as noise/static
+   rather than a smooth wobble; the seed offsets each field's phase so
+   several noised ridges don't tremor in lockstep. */
+@keyframes ridge-noise-jitter {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(0.6px, -0.4px); }
+  20% { transform: translate(-0.5px, 0.5px); }
+  30% { transform: translate(0.4px, 0.3px); }
+  40% { transform: translate(-0.6px, -0.3px); }
+  50% { transform: translate(0.3px, 0.6px); }
+  60% { transform: translate(-0.4px, -0.5px); }
+  70% { transform: translate(0.5px, 0.2px); }
+  80% { transform: translate(-0.3px, 0.4px); }
+  90% { transform: translate(0.2px, -0.6px); }
+}
+.ridge-noised {
+  animation: ridge-noise-jitter 900ms steps(1, end) infinite;
+  animation-delay: calc(var(--noise-seed, 0) * -180ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ridge-noised { animation: none; }
 }
 
 /* Step 1 field labels: one per ridge, at its foot, reading upward in the

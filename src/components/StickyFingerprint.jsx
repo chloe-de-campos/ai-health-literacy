@@ -125,7 +125,15 @@ function RidgeItem({ bar, onBarSelect, loadDraw = false }) {
 
   const classes = ['ridge'];
   if (keyframeActive) classes.push('ridge-draw');
-  if (bar.isSuppressedGhost) classes.push('ridge-suppressed');
+  // Generalization: no color/glow change, just a longer dash rhythm on the
+  // existing hover-dissolve (see .ridge-generalized .ridge-dashed) — "this
+  // field is now a blurred range," discoverable the same way any field's
+  // detail is, by hovering it.
+  if (bar.isGeneralized) classes.push('ridge-generalized');
+  // Noise: a continuous, subtle tremor — "the exact value has been
+  // perturbed" — distinct from suppression (removed) and generalization
+  // (blurred on hover). Seeded per field so several don't tremor in sync.
+  if (bar.isNoised) classes.push('ridge-noised');
 
   const drawDelay = loadDraw
     ? Math.max(0, RIDGE_ORDER.indexOf(bar.id)) * LOAD_DRAW_STAGGER_MS
@@ -135,7 +143,12 @@ function RidgeItem({ bar, onBarSelect, loadDraw = false }) {
     <g
       className={classes.join(' ')}
       data-bar-id={bar.id}
-      style={{ '--ridge-delay': `${drawDelay}ms`, opacity: bar.isSuppressedGhost ? 0.3 : (bar.opacity ?? 1) }}
+      style={{
+        '--ridge-delay': `${drawDelay}ms`,
+        '--noise-seed': bar.noiseSeed ?? 0,
+        opacity: bar.opacity ?? 1,
+        pointerEvents: bar.opacity === 0 ? 'none' : undefined,
+      }}
       onPointerEnter={(e) => { if (e.pointerType === 'mouse') setHovered(true); }}
       onPointerLeave={() => setHovered(false)}
     >
@@ -157,7 +170,7 @@ function RidgeItem({ bar, onBarSelect, loadDraw = false }) {
         pathLength={keyframeActive ? 1 : undefined}
         style={{
           opacity: dashed ? 0 : 1,
-          strokeDasharray: bar.isSuppressedGhost ? '2 4' : (keyframeActive ? 1 : 'none'),
+          strokeDasharray: keyframeActive ? 1 : 'none',
           strokeDashoffset: keyframeActive ? 1 : 0,
         }}
       />
@@ -363,7 +376,10 @@ function deriveBars(step, prevStep, subStep) {
       const s = subStep ?? 0;
 
       if (s >= 0 && SUPPRESSED_IDS.includes(bar.id)) {
-        return { ...base, isSuppressedGhost: true };
+        // Suppressed = removed, not a faded/dashed ghost of itself. Stays
+        // mounted (visible: true) just long enough to fade out via
+        // .ridge's own opacity transition, rather than popping away.
+        return { ...base, opacity: 0 };
       }
       if (s >= 1 && GENERALIZED_IDS.includes(bar.id)) {
         return {
@@ -378,6 +394,9 @@ function deriveBars(step, prevStep, subStep) {
           ...base,
           color: IDENTIFIER_GRAY,
           isNoised: true,
+          // Deterministic per-field offset so several noised ridges don't
+          // all tremor in lockstep.
+          noiseSeed: NOISE_IDS.indexOf(bar.id),
         };
       }
       return base;
