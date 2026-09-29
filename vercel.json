@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/health-literacy/static/(.*)", "destination": "/static/$1" },
+    { "source": "/health-literacy/(manifest.json|favicon.ico|favicon.svg|favicon.png|logo192.png|logo512.png|robots.txt|asset-manifest.json)", "destination": "/$1" },
     { "source": "/health-literacy/(.*)", "destination": "/index.html" },
     { "source": "/health-literacy", "destination": "/index.html" }
   ]
