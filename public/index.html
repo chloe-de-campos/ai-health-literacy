@@ -32,29 +32,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;600&family=Atkinson+Hyperlegible+Next:wght@400;500&family=Archivo:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet" />
-    <!-- Cover headline font: Redaction (clean cut), self-hosted, OFL — see
-         fonts/Redaction-OFL.txt. Desktop only; mobile has no cover yet. -->
-    <link rel="preload" href="%PUBLIC_URL%/fonts/Redaction-Bold.woff2" as="font" type="font/woff2" crossorigin media="(min-width: 769px)" />
     <style>
-      @font-face {
-        font-family: 'Redaction';
-        src: url('%PUBLIC_URL%/fonts/Redaction-Bold.woff2') format('woff2');
-        font-weight: 700;
-        font-style: normal;
-        font-display: swap;
-      }
-      /* Metric-matched stand-ins shown until the web fonts arrive, so the
-         swap doesn't reflow the cover. Measured against the real fonts
+      /* Metric-matched stand-in shown until the web font arrives, so the
+         swap doesn't reflow the cover. Measured against the real font
          (average advance over the actual cover copy, vertical metrics). */
-      @font-face {
-        font-family: 'Redaction Fallback';
-        src: local('Georgia Bold'), local('Georgia-Bold');
-        font-weight: 700;
-        size-adjust: 97.1%;
-        ascent-override: 92.69%;
-        descent-override: 30.9%;
-        line-gap-override: 0%;
-      }
       @font-face {
         font-family: 'Atkinson Next Fallback';
         src: local('Arial'), local('ArialMT');

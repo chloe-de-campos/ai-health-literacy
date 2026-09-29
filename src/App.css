@@ -1981,22 +1981,34 @@ body {
   /* sits above the progress bar (~62px) */
   bottom: 62px;
   z-index: 50;
+  /* Transparent tap-catcher: covers the content area so tapping anywhere
+     outside dismisses, but draws nothing itself. The sheet below takes
+     only the height its content needs, so the step text stays visible
+     behind it — it used to stretch this whole box and black out the slide. */
   display: flex;
-  align-items: flex-start;
-  padding: 16px;
-  /* Was a near-opaque cream panel from the pre-redesign light theme, so
-     its (correctly cream) text was washed out and half-legible. Matches
-     .bar-popover's raised dark surface now. */
-  background: var(--cream-raised);
-  border-top: 1px solid var(--ink-faint-2);
-  overflow-y: auto;
+  align-items: flex-end;
+  background: none;
+  overflow: hidden;
   animation: fade-in 150ms ease both;
 }
 
 .mobile-bar-detail-card {
   width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  /* Matches .bar-popover's raised dark surface (was a pre-redesign cream
+     panel, which washed out its own cream text). */
+  background: var(--cream-raised);
+  border-top: 1px solid var(--ink-faint-2);
   border-left: 3px solid currentColor;
-  padding-left: 14px;
+  padding: 14px 16px 18px;
+  box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.45);
+  animation: mobile-sheet-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes mobile-sheet-in {
+  from { transform: translateY(16px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
 }
 
 .mobile-bar-detail-header {
